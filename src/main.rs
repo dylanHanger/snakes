@@ -1,7 +1,9 @@
 mod grid;
+mod movement;
 
 use bevy::prelude::*;
 use grid::prelude::*;
+use movement::prelude::*;
 
 struct SnakesPlugin;
 impl Plugin for SnakesPlugin {
@@ -10,6 +12,8 @@ impl Plugin for SnakesPlugin {
             .insert_resource(GameGrid::new(8, 8))
             .add_startup_system(setup)
             .add_startup_system(setup_camera)
+            .add_system(movement_system)
+            .add_system(random_moves_system)
             .add_system(draw_grid_objects);
     }
 }
@@ -34,6 +38,18 @@ fn setup(mut commands: Commands, grid: Res<GameGrid>) {
                 .insert(GridScale::square(0.95));
         }
     }
+
+    commands
+        .spawn_bundle(SpriteBundle {
+            sprite: Sprite {
+                color: Color::rgb(0.5, 0.5, 0.8),
+                ..default()
+            },
+            ..default()
+        })
+        .insert(GridPosition::new(0, 0))
+        .insert(GridScale::square(0.7))
+        .insert(RandomMoves);
 }
 
 fn setup_camera(mut commands: Commands) {
