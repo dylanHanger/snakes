@@ -18,7 +18,7 @@ pub fn random_moves_system(
             _ => Direction::West,
         };
 
-        commands.entity(e).insert(MoveIntent(random_move));
+        commands.entity(e).insert(MoveIntent::from(random_move));
     }
 }
 
@@ -27,11 +27,8 @@ pub fn movement_system(
     mut q: Query<(Entity, &mut GridPosition, &MoveIntent)>,
 ) {
     for (e, mut pos, intent) in q.iter_mut() {
-        let dx = intent.delta_x();
-        let dy = intent.delta_y();
-
-        pos.x += dx;
-        pos.y += dy;
+        pos.x += intent.x;
+        pos.y += intent.y;
 
         commands.entity(e).remove::<MoveIntent>();
     }
