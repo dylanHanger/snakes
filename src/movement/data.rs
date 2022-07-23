@@ -1,6 +1,6 @@
-use bevy::prelude::{Component, Deref, DerefMut};
+use bevy::prelude::{Component, Deref, DerefMut, KeyCode};
 
-#[derive(PartialEq, Eq)]
+#[derive(Debug, PartialEq, Eq, Clone, Copy)]
 pub enum Direction {
     North,
     East,
@@ -22,10 +22,26 @@ impl Direction {
             _ => 0,
         }
     }
+    pub fn opposite(&self) -> Self {
+        match self {
+            Direction::North => Direction::South,
+            Direction::East => Direction::West,
+            Direction::South => Direction::North,
+            Direction::West => Direction::East,
+        }
+    }
 }
 
 #[derive(Component)]
 pub struct RandomMoves;
+
+#[derive(Component)]
+pub struct KeyboardMoves {
+    pub north: KeyCode,
+    pub east: KeyCode,
+    pub south: KeyCode,
+    pub west: KeyCode,
+}
 
 #[derive(Component, Deref, DerefMut)]
 pub struct MoveIntent {

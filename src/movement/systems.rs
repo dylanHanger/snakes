@@ -1,7 +1,10 @@
 use super::data::{Direction, *};
 use crate::grid::prelude::*;
 
-use bevy::prelude::{Commands, Entity, Query, With, Without};
+use bevy::{
+    input::Input,
+    prelude::{Commands, Entity, KeyCode, Query, Res, With, Without},
+};
 use rand::Rng;
 
 pub fn random_moves_system(
@@ -19,6 +22,30 @@ pub fn random_moves_system(
         };
 
         commands.entity(e).insert(MoveIntent::from(random_move));
+    }
+}
+
+pub fn keyboard_moves_system(
+    mut commands: Commands,
+    q: Query<(Entity, &KeyboardMoves)>,
+    input: Res<Input<KeyCode>>,
+) {
+    for (e, controls) in q.iter() {
+        let direction = if input.just_pressed(controls.north) {
+            Some(Direction::North)
+        } else if input.just_pressed(controls.east) {
+            Some(Direction::East)
+        } else if input.just_pressed(controls.south) {
+            Some(Direction::South)
+        } else if input.just_pressed(controls.west) {
+            Some(Direction::West)
+        } else {
+            None
+        };
+
+        if let Some(dir) = direction {
+            commands.entity(e).insert(MoveIntent::from(dir));
+        }
     }
 }
 
