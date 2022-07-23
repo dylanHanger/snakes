@@ -1,5 +1,5 @@
 use super::data::{Direction, *};
-use crate::grid::prelude::*;
+use crate::{grid::prelude::*, Actor};
 
 use bevy::{
     input::Input,
@@ -9,7 +9,7 @@ use rand::Rng;
 
 pub fn random_moves_system(
     mut commands: Commands,
-    q: Query<Entity, (With<RandomMoves>, Without<MoveIntent>)>,
+    q: Query<Entity, (With<Actor>, With<RandomMoves>, Without<MoveIntent>)>,
 ) {
     let mut rng = rand::thread_rng();
 
@@ -27,7 +27,7 @@ pub fn random_moves_system(
 
 pub fn keyboard_moves_system(
     mut commands: Commands,
-    q: Query<(Entity, &KeyboardMoves)>,
+    q: Query<(Entity, &KeyboardMoves), With<Actor>>,
     input: Res<Input<KeyCode>>,
 ) {
     for (e, controls) in q.iter() {
