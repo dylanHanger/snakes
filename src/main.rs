@@ -1,16 +1,18 @@
 mod grid;
 mod movement;
+mod snakes;
 mod turns;
 
 use std::time::Duration;
 
 use bevy::prelude::{
-    default, App, ClearColor, Color, Commands, Component, DefaultPlugins, Entity,
-    OrthographicCameraBundle, Plugin, Query, Res, Sprite, SpriteBundle, SystemSet,
+    default, App, ClearColor, Color, Commands, Component, CoreStage, DefaultPlugins,
+    IntoChainSystem, KeyCode, OrthographicCameraBundle, Plugin, Sprite, SpriteBundle, SystemSet,
     WindowDescriptor,
 };
 use grid::prelude::*;
 use movement::prelude::*;
+use snakes::prelude::*;
 use turns::prelude::*;
 
 #[derive(Component)]
@@ -21,43 +23,30 @@ impl Plugin for SnakesPlugin {
     fn build(&self, app: &mut App) {
         app.add_plugins(DefaultPlugins)
             .insert_resource(GameGrid::new(8, 8))
-            .insert_resource(Turn::new(Duration::from_millis(250), true))
+            .insert_resource(Turn::new(Duration::from_millis(100), true))
             .add_startup_system(setup)
             .add_startup_system(setup_camera)
+            .add_system_set_to_stage(
+                CoreStage::PreUpdate,
+                SystemSet::new()
+                    .with_run_criteria(turn_ready)
+                    .with_system(limit_snake_moves),
+            )
             .add_system_set(
                 SystemSet::new()
                     .with_run_criteria(turn_ready)
                     .with_system(reset_turn_system)
-                    .with_system(movement_system),
+                    .with_system(slither_system.chain(movement_system)), // Is this a flagrant abuse of system chaining to enforce order?
             )
             .add_system(turn_timer_system)
             .add_system(turn_ready_system)
             .add_system(random_moves_system)
+            .add_system(keyboard_moves_system)
             .add_system(draw_grid_objects);
     }
 }
 
-fn setup(mut commands: Commands, grid: Res<GameGrid>) {
-    for x in 0..grid.width {
-        for y in 0..grid.height {
-            let parity = (x + y) % 2;
-            commands
-                .spawn_bundle(SpriteBundle {
-                    sprite: Sprite {
-                        color: if parity == 0 {
-                            Color::WHITE * 0.1
-                        } else {
-                            Color::WHITE * 0.9
-                        },
-                        ..default()
-                    },
-                    ..default()
-                })
-                .insert(GridPosition::new(x as i32, y as i32))
-                .insert(GridScale::square(0.95));
-        }
-    }
-
+fn setup(mut commands: Commands) {
     commands
         .spawn_bundle(SpriteBundle {
             sprite: Sprite {
@@ -69,7 +58,13 @@ fn setup(mut commands: Commands, grid: Res<GameGrid>) {
         .insert(GridPosition::new(4, 4))
         .insert(GridScale::square(0.7))
         .insert(Actor)
-        .insert(RandomMoves);
+        .insert(Snake::new())
+        .insert(KeyboardMoves {
+            north: KeyCode::W,
+            east: KeyCode::A,
+            south: KeyCode::S,
+            west: KeyCode::D,
+        });
 }
 
 fn setup_camera(mut commands: Commands) {
