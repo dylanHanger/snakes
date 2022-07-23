@@ -28,14 +28,4 @@ impl Direction {
 pub struct RandomMoves;
 
 #[derive(Component, Deref, DerefMut)]
-pub struct MoveIntent(pub IVec2);
-impl MoveIntent {
-    pub fn new(x: i32, y: i32) -> Self {
-        Self(IVec2::new(x, y))
-    }
-}
-impl From<Direction> for MoveIntent {
-    fn from(dir: Direction) -> Self {
-        Self::new(dir.delta_x(), dir.delta_y())
-    }
-}
+pub struct MoveIntent(pub Direction);
