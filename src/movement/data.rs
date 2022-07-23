@@ -28,4 +28,11 @@ impl Direction {
 pub struct RandomMoves;
 
 #[derive(Component, Deref, DerefMut)]
-pub struct MoveIntent(pub Direction);
+pub struct MoveIntent {
+    pub direction: Direction,
+}
+impl From<Direction> for MoveIntent {
+    fn from(direction: Direction) -> Self {
+        Self { direction }
+    }
+}

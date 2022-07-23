@@ -18,7 +18,7 @@ pub fn random_moves_system(
             _ => Direction::West,
         };
 
-        commands.entity(e).insert(MoveIntent(random_move));
+        commands.entity(e).insert(MoveIntent::from(random_move));
     }
 }
 
