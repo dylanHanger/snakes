@@ -1,4 +1,7 @@
-use bevy::{ecs::schedule::ShouldRun, prelude::*};
+use bevy::{
+    ecs::schedule::ShouldRun,
+    prelude::{Query, Res, ResMut, Time, With},
+};
 
 use crate::{movement::prelude::MoveIntent, Actor};
 

@@ -4,7 +4,11 @@ mod turns;
 
 use std::time::Duration;
 
-use bevy::prelude::*;
+use bevy::prelude::{
+    default, App, ClearColor, Color, Commands, Component, DefaultPlugins, Entity,
+    OrthographicCameraBundle, Plugin, Query, Res, Sprite, SpriteBundle, SystemSet,
+    WindowDescriptor,
+};
 use grid::prelude::*;
 use movement::prelude::*;
 use turns::prelude::*;

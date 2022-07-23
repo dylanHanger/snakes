@@ -1,4 +1,4 @@
-use bevy::prelude::*;
+use bevy::prelude::{Component, Deref, DerefMut, IVec2, Vec2};
 
 // Every object has a grid position and occupies one grid cell
 #[derive(Component, Deref, DerefMut, Clone, Copy)]

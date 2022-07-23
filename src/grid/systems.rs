@@ -1,5 +1,5 @@
 use super::data::*;
-use bevy::prelude::*;
+use bevy::prelude::{Query, Res, Transform, Vec2, Vec3, Windows};
 
 // There are systems that handle drawing the grid world onto the window
 pub fn draw_grid_objects(

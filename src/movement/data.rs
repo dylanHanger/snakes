@@ -1,4 +1,4 @@
-use bevy::prelude::*;
+use bevy::prelude::{Component, Deref, DerefMut};
 
 #[derive(PartialEq, Eq)]
 pub enum Direction {
