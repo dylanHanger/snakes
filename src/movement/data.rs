@@ -10,8 +10,8 @@ pub enum Direction {
 impl Direction {
     pub fn delta_x(&self) -> i32 {
         match self {
-            Direction::East => -1,
-            Direction::West => 1,
+            Direction::East => 1,
+            Direction::West => -1,
             _ => 0,
         }
     }
