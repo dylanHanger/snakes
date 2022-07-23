@@ -7,7 +7,7 @@ use std::time::Duration;
 
 use bevy::prelude::{
     default, App, ClearColor, Color, Commands, Component, CoreStage, DefaultPlugins,
-    IntoChainSystem, KeyCode, OrthographicCameraBundle, Plugin, Sprite, SpriteBundle, SystemSet,
+    IntoChainSystem, OrthographicCameraBundle, Plugin, Sprite, SpriteBundle, SystemSet,
     WindowDescriptor,
 };
 use grid::prelude::*;
@@ -59,12 +59,7 @@ fn setup(mut commands: Commands) {
         .insert(GridScale::square(0.7))
         .insert(Actor)
         .insert(Snake::new())
-        .insert(KeyboardMoves {
-            north: KeyCode::W,
-            east: KeyCode::A,
-            south: KeyCode::S,
-            west: KeyCode::D,
-        });
+        .insert(KeyboardMoves::wasd());
 }
 
 fn setup_camera(mut commands: Commands) {

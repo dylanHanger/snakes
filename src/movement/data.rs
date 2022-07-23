@@ -42,6 +42,24 @@ pub struct KeyboardMoves {
     pub south: KeyCode,
     pub west: KeyCode,
 }
+impl KeyboardMoves {
+    pub fn wasd() -> Self {
+        Self {
+            north: KeyCode::W,
+            east: KeyCode::D,
+            south: KeyCode::S,
+            west: KeyCode::A,
+        }
+    }
+    pub fn arrows() -> Self {
+        Self {
+            north: KeyCode::Up,
+            east: KeyCode::Right,
+            south: KeyCode::Down,
+            west: KeyCode::Left,
+        }
+    }
+}
 
 #[derive(Component, Deref, DerefMut)]
 pub struct MoveIntent {
