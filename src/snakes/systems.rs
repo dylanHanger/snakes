@@ -5,10 +5,11 @@ use bevy::{
 
 use crate::{
     grid::prelude::{GridPosition, GridScale},
-    movement::prelude::MoveIntent,
+    movement::prelude::{Direction, MoveIntent},
+    Collidable,
 };
 
-use super::data::{Snake, SnakeSegment};
+use super::data::{PlayerId, Snake, SnakeSegment};
 
 pub fn slither_system(mut commands: Commands, mut q: Query<(&mut Snake, &GridPosition)>) {
     for (mut snake, position) in q.iter_mut() {
@@ -23,7 +24,11 @@ pub fn slither_system(mut commands: Commands, mut q: Query<(&mut Snake, &GridPos
             })
             .insert(*position)
             .insert(GridScale::square(0.6))
-            .insert(SnakeSegment)
+            .insert(SnakeSegment {
+                player: PlayerId(0),
+                direction: Direction::North,
+            })
+            .insert(Collidable)
             .id();
         snake.body.insert(0, segment);
 
@@ -37,16 +42,17 @@ pub fn slither_system(mut commands: Commands, mut q: Query<(&mut Snake, &GridPos
 
 pub fn limit_snake_moves(
     mut commands: Commands,
-    mut q: Query<(Entity, &mut Snake, Option<&mut MoveIntent>)>,
+    mut q: Query<(Entity, &Snake, &mut SnakeSegment, Option<&mut MoveIntent>)>,
 ) {
-    for (e, mut snake, intent) in q.iter_mut() {
+    for (e, head, mut segment, intent) in q.iter_mut() {
         if let Some(mut intent) = intent {
-            if !snake.can_move(intent.direction) {
-                intent.direction = snake.direction;
+            let can_move = head.body.is_empty() || intent.direction != segment.direction.opposite();
+            if !can_move {
+                intent.direction = segment.direction;
             }
-            snake.direction = intent.direction;
+            segment.direction = intent.direction;
         } else {
-            let intent = MoveIntent::from(snake.direction);
+            let intent = MoveIntent::from(segment.direction);
             commands.entity(e).insert(intent);
         }
     }

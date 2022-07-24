@@ -1,3 +1,6 @@
+mod collisions;
+mod death;
+mod food;
 mod grid;
 mod movement;
 mod snakes;
@@ -6,10 +9,12 @@ mod turns;
 use std::time::Duration;
 
 use bevy::prelude::{
-    default, App, ClearColor, Color, Commands, Component, CoreStage, DefaultPlugins,
-    IntoChainSystem, OrthographicCameraBundle, Plugin, Sprite, SpriteBundle, SystemSet,
-    WindowDescriptor,
+    default, App, ClearColor, Color, Commands, Component, CoreStage, DefaultPlugins, IntoChainSystem, OrthographicCameraBundle, Plugin,
+    Sprite, SpriteBundle, SystemSet, WindowDescriptor,
 };
+use collisions::prelude::*;
+use death::prelude::*;
+use food::prelude::*;
 use grid::prelude::*;
 use movement::prelude::*;
 use snakes::prelude::*;
@@ -22,8 +27,9 @@ struct SnakesPlugin;
 impl Plugin for SnakesPlugin {
     fn build(&self, app: &mut App) {
         app.add_plugins(DefaultPlugins)
-            .insert_resource(GameGrid::new(8, 8))
-            .insert_resource(Turn::new(Duration::from_millis(100), true))
+            .insert_resource(GameGrid::new(32, 32))
+            .insert_resource(Turn::new(Duration::from_millis(0), true))
+            .add_event::<DeathEvent>()
             .add_startup_system(setup)
             .add_startup_system(setup_camera)
             .add_system_set_to_stage(
@@ -31,6 +37,13 @@ impl Plugin for SnakesPlugin {
                 SystemSet::new()
                     .with_run_criteria(turn_ready)
                     .with_system(limit_snake_moves),
+            )
+            .add_system_set_to_stage(
+                CoreStage::PostUpdate,
+                SystemSet::new()
+                    .with_run_criteria(turn_ready)
+                    .with_run_criteria(can_spawn_food)
+                    .with_system(spawn_food_system),
             )
             .add_system_set(
                 SystemSet::new()
@@ -42,7 +55,13 @@ impl Plugin for SnakesPlugin {
             .add_system(turn_ready_system)
             .add_system(random_moves_system)
             .add_system(keyboard_moves_system)
-            .add_system(draw_grid_objects);
+            .add_system(collision_system)
+            .add_system(eat_food_system)
+            .add_system(death_system)
+            .add_system_set_to_stage(
+                CoreStage::PostUpdate,
+                SystemSet::new().with_system(draw_grid_objects),
+            );
     }
 }
 
@@ -59,6 +78,10 @@ fn setup(mut commands: Commands) {
         .insert(GridScale::square(0.7))
         .insert(Actor)
         .insert(Snake::new())
+        .insert(SnakeSegment {
+            player: PlayerId(0),
+            direction: Direction::North,
+        })
         .insert(KeyboardMoves::wasd());
 }
 
