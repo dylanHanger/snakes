@@ -1,6 +1,14 @@
 use std::time::Duration;
 
-use bevy::core::Timer;
+use bevy::{core::Timer, prelude::StageLabel};
+
+#[derive(StageLabel, Debug, Hash, PartialEq, Eq, Clone, Copy)]
+pub enum TurnStage {
+    PreTurn,
+    Request,
+    PostRequest,
+    Simulate,
+}
 
 pub struct Turn {
     pub ready: bool,
