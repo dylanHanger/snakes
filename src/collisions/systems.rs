@@ -3,14 +3,14 @@ use bevy::prelude::*;
 use crate::{
     death::prelude::DeathEvent,
     grid::prelude::{GameGrid, GridPosition},
-    snakes::prelude::{Snake, SnakeSegment},
+    snakes::prelude::{Player, Snake},
 };
 
 use super::data::Collidable;
 
 pub fn collision_system(
     snakes: Query<(Entity, &GridPosition), With<Snake>>,
-    collidables: Query<(Entity, &GridPosition, Option<&SnakeSegment>), With<Collidable>>,
+    collidables: Query<(Entity, &GridPosition, Option<&Player>), With<Collidable>>,
     grid: Res<GameGrid>,
     mut deaths: EventWriter<DeathEvent>,
 ) {
@@ -24,18 +24,14 @@ pub fn collision_system(
             });
         }
 
-        for (e2, position2, segment) in collidables.iter() {
+        for (e2, position2, player) in collidables.iter() {
             if e1 == e2 {
                 continue;
             }
 
             if position1 == position2 {
                 // A collision has occured
-                if let Some(&SnakeSegment {
-                    player,
-                    direction: _,
-                }) = segment
-                {
+                if let Some(&player) = player {
                     // It was with another snake
                     // Kill this snake
                     deaths.send(DeathEvent {

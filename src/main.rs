@@ -9,8 +9,8 @@ mod turns;
 use std::time::Duration;
 
 use bevy::prelude::{
-    default, App, ClearColor, Color, Commands, Component, CoreStage, DefaultPlugins, IntoChainSystem, OrthographicCameraBundle, Plugin,
-    Sprite, SpriteBundle, SystemSet, WindowDescriptor,
+    default, App, ClearColor, Color, Commands, Component, CoreStage, DefaultPlugins,
+    IntoChainSystem, OrthographicCameraBundle, Plugin, SystemSet, WindowDescriptor,
 };
 use collisions::prelude::*;
 use death::prelude::*;
@@ -67,21 +67,10 @@ impl Plugin for SnakesPlugin {
 
 fn setup(mut commands: Commands) {
     commands
-        .spawn_bundle(SpriteBundle {
-            sprite: Sprite {
-                color: Color::rgb(0.5, 0.5, 0.8),
-                ..default()
-            },
-            ..default()
-        })
-        .insert(GridPosition::new(4, 4))
-        .insert(GridScale::square(0.7))
-        .insert(Actor)
-        .insert(Snake::new())
-        .insert(SnakeSegment {
-            player: PlayerId(0),
-            direction: Direction::North,
-        })
+        .spawn_bundle(SnakeBundle::new(
+            Player { id: 0 },
+            GridPosition::new(16, 16),
+        ))
         .insert(KeyboardMoves::wasd());
 }
 

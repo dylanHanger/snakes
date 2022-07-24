@@ -1,34 +1,14 @@
-use bevy::{
-    prelude::{default, Color, Commands, Entity, Query},
-    sprite::{Sprite, SpriteBundle},
-};
+use bevy::prelude::{Commands, Entity, Query};
 
-use crate::{
-    grid::prelude::{GridPosition, GridScale},
-    movement::prelude::{Direction, MoveIntent},
-    Collidable,
-};
+use crate::{grid::prelude::GridPosition, movement::prelude::MoveIntent};
 
-use super::data::{PlayerId, Snake, SnakeSegment};
+use super::data::{Player, SegmentBundle, Snake};
 
-pub fn slither_system(mut commands: Commands, mut q: Query<(&mut Snake, &GridPosition)>) {
-    for (mut snake, position) in q.iter_mut() {
+pub fn slither_system(mut commands: Commands, mut q: Query<(&mut Snake, &Player, &GridPosition)>) {
+    for (mut snake, player, position) in q.iter_mut() {
         // Ensure the tail grows with the snakes movement
         let segment = commands
-            .spawn_bundle(SpriteBundle {
-                sprite: Sprite {
-                    color: Color::rgb(0.5, 0.5, 0.8) * 0.6,
-                    ..default()
-                },
-                ..default()
-            })
-            .insert(*position)
-            .insert(GridScale::square(0.6))
-            .insert(SnakeSegment {
-                player: PlayerId(0),
-                direction: Direction::North,
-            })
-            .insert(Collidable)
+            .spawn_bundle(SegmentBundle::new(*player, *position))
             .id();
         snake.body.insert(0, segment);
 
@@ -42,17 +22,17 @@ pub fn slither_system(mut commands: Commands, mut q: Query<(&mut Snake, &GridPos
 
 pub fn limit_snake_moves(
     mut commands: Commands,
-    mut q: Query<(Entity, &Snake, &mut SnakeSegment, Option<&mut MoveIntent>)>,
+    mut q: Query<(Entity, &mut Snake, Option<&mut MoveIntent>)>,
 ) {
-    for (e, head, mut segment, intent) in q.iter_mut() {
+    for (e, mut snake, intent) in q.iter_mut() {
         if let Some(mut intent) = intent {
-            let can_move = head.body.is_empty() || intent.direction != segment.direction.opposite();
+            let can_move = snake.body.is_empty() || intent.direction != snake.direction.opposite();
             if !can_move {
-                intent.direction = segment.direction;
+                intent.direction = snake.direction;
             }
-            segment.direction = intent.direction;
+            snake.direction = intent.direction;
         } else {
-            let intent = MoveIntent::from(segment.direction);
+            let intent = MoveIntent::from(snake.direction);
             commands.entity(e).insert(intent);
         }
     }

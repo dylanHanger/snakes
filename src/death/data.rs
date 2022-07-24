@@ -1,8 +1,8 @@
 use bevy::prelude::Entity;
 
-use crate::snakes::prelude::PlayerId;
+use crate::snakes::prelude::Player;
 
 pub struct DeathEvent {
     pub target: Entity,
-    pub culprit: Option<PlayerId>,
+    pub culprit: Option<Player>,
 }

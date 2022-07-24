@@ -70,3 +70,13 @@ impl From<Direction> for MoveIntent {
         Self { direction }
     }
 }
+
+#[derive(Component, Deref, DerefMut)]
+pub struct LastMove {
+    pub direction: Direction,
+}
+impl From<Direction> for LastMove {
+    fn from(direction: Direction) -> Self {
+        Self { direction }
+    }
+}
