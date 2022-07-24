@@ -6,14 +6,17 @@ use super::data::{Player, SegmentBundle, Snake};
 
 pub fn slither_system(
     mut commands: Commands,
-    mut q: Query<(&mut Snake, &Player, &GridPosition, &MoveIntent)>,
+    mut q: Query<(&mut Snake, &GridPosition, &MoveIntent, Option<&Player>)>,
 ) {
-    for (mut snake, player, position, intent) in q.iter_mut() {
+    for (mut snake, position, intent, player) in q.iter_mut() {
         // Ensure the tail grows with the snakes movement
-        let segment = commands
-            .spawn_bundle(SegmentBundle::new(*position)).insert(*player)
-            .id();
-        snake.body.insert(0, segment);
+        let mut segment = commands.spawn_bundle(SegmentBundle::new(*position));
+
+        if let Some(player) = player {
+            segment.insert(*player);
+        }
+
+        snake.body.insert(0, segment.id());
 
         while snake.body.len() >= snake.length {
             if let Some(tail) = snake.body.pop() {

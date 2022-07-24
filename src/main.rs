@@ -29,7 +29,7 @@ impl Plugin for SnakesPlugin {
     fn build(&self, app: &mut App) {
         app.add_plugins(DefaultPlugins)
             .insert_resource(GameGrid::new(32, 32))
-            .insert_resource(Turn::new(Duration::from_millis(100), true))
+            .insert_resource(Turn::new(Duration::from_millis(100), false))
             .add_stage_after(
                 CoreStage::Update,
                 TurnStage::PreTurn,
@@ -48,6 +48,11 @@ impl Plugin for SnakesPlugin {
             .add_stage_after(
                 TurnStage::PostRequest,
                 TurnStage::Simulate,
+                SystemStage::parallel(),
+            )
+            .add_stage_after(
+                TurnStage::Simulate,
+                TurnStage::PostSimulate,
                 SystemStage::parallel(),
             )
             .add_event::<DeathEvent>()
@@ -95,22 +100,21 @@ impl Plugin for SnakesPlugin {
                     .into(),
             )
             .add_system_set_to_stage(
-                TurnStage::Simulate,
+                TurnStage::PostSimulate,
                 SystemSet::new()
                     .label("collisions")
-                    .after("simulate")
                     .with_system(collision_system)
                     .with_system(eat_food_system),
             )
             .add_system_set_to_stage(
-                TurnStage::Simulate,
+                TurnStage::PostSimulate,
                 SystemSet::new()
                     .label("deaths")
                     .after("collisions")
                     .with_system(death_system),
             )
             .add_system_set_to_stage(
-                TurnStage::Simulate,
+                TurnStage::PostSimulate,
                 ConditionSet::new()
                     .label("spawn")
                     .after("deaths")

@@ -27,7 +27,7 @@ pub fn death_system(
 
 pub fn spawn_snakes_system(
     mut commands: Commands,
-    mut q: Query<(Entity, &mut Respawning, &Player)>,
+    mut q: Query<(Entity, &mut Respawning, Option<&Player>)>,
     occupied: Query<&GridPosition>,
     grid: Res<GameGrid>,
 ) {
@@ -38,11 +38,15 @@ pub fn spawn_snakes_system(
         } else {
             // Respawn
             let position = grid.get_unoccupied_position(&occupied);
-            commands
-                .entity(e)
+
+            let mut entity = commands.entity(e);
+            entity
                 .insert_bundle(SnakeBundle::new(position))
-                .insert(*player)
                 .remove::<Respawning>();
+
+            if let Some(player) = player {
+                entity.insert(*player);
+            }
         }
     }
 }

@@ -8,6 +8,7 @@ pub enum TurnStage {
     Request,
     PostRequest,
     Simulate,
+    PostSimulate,
 }
 
 pub struct Turn {
