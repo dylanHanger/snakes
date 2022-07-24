@@ -10,13 +10,13 @@ use std::time::Duration;
 
 use bevy::prelude::{
     default, App, ClearColor, Color, Commands, Component, CoreStage, DefaultPlugins,
-    IntoChainSystem, OrthographicCameraBundle, Plugin, SystemSet, SystemStage,
-    WindowDescriptor,
+    IntoChainSystem, OrthographicCameraBundle, Plugin, SystemSet, SystemStage, WindowDescriptor,
 };
 use collisions::prelude::*;
 use death::prelude::*;
 use food::prelude::*;
 use grid::prelude::*;
+use iyes_loopless::prelude::ConditionSet;
 use movement::prelude::*;
 use snakes::prelude::*;
 use turns::prelude::*;
@@ -29,7 +29,7 @@ impl Plugin for SnakesPlugin {
     fn build(&self, app: &mut App) {
         app.add_plugins(DefaultPlugins)
             .insert_resource(GameGrid::new(32, 32))
-            .insert_resource(Turn::new(Duration::from_millis(100), false))
+            .insert_resource(Turn::new(Duration::from_millis(100), true))
             .add_stage_after(
                 CoreStage::Update,
                 TurnStage::PreTurn,
@@ -54,45 +54,45 @@ impl Plugin for SnakesPlugin {
             .add_startup_system(setup)
             .add_startup_system(setup_camera)
             .add_system_set_to_stage(
-                TurnStage::PreTurn,
-                SystemSet::new()
-                    .label("spawn")
-                    // .with_system(spawn_snakes_system)
-                    .with_run_criteria(turn_ready)
-                    .with_run_criteria(can_spawn_food)
-                    .with_system(spawn_food_system),
-            )
-            .add_system_set_to_stage(
-                TurnStage::Request,
+                CoreStage::PreUpdate,
                 SystemSet::new()
                     .label("wait")
                     .with_system(turn_timer_system)
                     .with_system(turn_ready_system),
             )
             .add_system_set_to_stage(
+                TurnStage::PreTurn,
+                ConditionSet::new()
+                    .label("spawn")
+                    // .with_system(spawn_snakes_system)
+                    .run_if(turn_ready)
+                    .run_if(can_spawn_food)
+                    .with_system(spawn_food_system)
+                    .into(),
+            )
+            .add_system_set_to_stage(
                 TurnStage::Request,
                 SystemSet::new()
                     .label("input")
-                    .before("wait")
                     .with_system(random_moves_system)
                     .with_system(keyboard_moves_system),
             )
             .add_system_set_to_stage(
                 TurnStage::PostRequest,
-                SystemSet::new()
+                ConditionSet::new()
                     .label("fix input")
-                    // .after("input")
-                    .with_run_criteria(turn_ready)
+                    .run_if(turn_ready)
                     .with_system(limit_snake_moves)
-                    .with_system(default_snake_moves),
+                    .with_system(default_snake_moves)
+                    .into(),
             )
             .add_system_set_to_stage(
                 TurnStage::Simulate,
-                SystemSet::new()
+                ConditionSet::new()
                     .label("simulate")
-                    .with_run_criteria(turn_ready)
-                    .with_system(reset_turn_system)
-                    .with_system(slither_system.chain(movement_system)),
+                    .run_if(turn_ready)
+                    .with_system(slither_system.chain(movement_system))
+                    .into(),
             )
             .add_system_set_to_stage(
                 TurnStage::Simulate,
@@ -110,6 +110,23 @@ impl Plugin for SnakesPlugin {
                     .with_system(death_system),
             )
             .add_system_set_to_stage(
+                TurnStage::Simulate,
+                ConditionSet::new()
+                    .label("spawn")
+                    .after("deaths")
+                    .run_if(turn_ready)
+                    .with_system(spawn_snakes_system)
+                    .into(),
+            )
+            .add_system_set_to_stage(
+                CoreStage::PostUpdate,
+                ConditionSet::new()
+                    .label("end")
+                    .run_if(turn_ready)
+                    .with_system(reset_turn_system)
+                    .into(),
+            )
+            .add_system_set_to_stage(
                 CoreStage::PostUpdate,
                 SystemSet::new()
                     .label("grid transforms")
@@ -120,16 +137,14 @@ impl Plugin for SnakesPlugin {
 
 fn setup(mut commands: Commands) {
     commands
-        .spawn_bundle(SnakeBundle::new(
-            Player { id: 0 },
-            GridPosition::new(16, 16),
-        ))
+        .spawn()
+        .insert(Player { id: 0 })
+        .insert(Respawning { time: 0 })
         .insert(KeyboardMoves::wasd());
     commands
-        .spawn_bundle(SnakeBundle::new(
-            Player { id: 1 },
-            GridPosition::new(15, 15),
-        ))
+        .spawn()
+        .insert(Player { id: 1 })
+        .insert(Respawning { time: 5 })
         .insert(RandomMoves);
 }
 

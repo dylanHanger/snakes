@@ -1,5 +1,4 @@
 use bevy::{
-    ecs::schedule::ShouldRun,
     prelude::{default, Color, Commands, Entity, Query, Res, Sprite, SpriteBundle, With},
 };
 
@@ -10,12 +9,8 @@ use crate::{
 
 use super::data::Food;
 
-pub fn can_spawn_food(food: Query<&GridPosition, With<Food>>) -> ShouldRun {
-    if food.iter().count() == 0 {
-        ShouldRun::Yes
-    } else {
-        ShouldRun::No
-    }
+pub fn can_spawn_food(food: Query<&GridPosition, With<Food>>) -> bool {
+    food.iter().count() == 0
 }
 
 pub fn spawn_food_system(

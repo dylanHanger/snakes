@@ -40,7 +40,6 @@ pub struct SnakeBundle {
     _segment: SnakeSegment,
 
     // Game things
-    _player: Player,
     _collidable: Collidable,
     _actor: Actor,
 
@@ -53,11 +52,10 @@ pub struct SnakeBundle {
     _sprite: SpriteBundle,
 }
 impl SnakeBundle {
-    pub fn new(player: Player, position: GridPosition) -> Self {
+    pub fn new(position: GridPosition) -> Self {
         Self {
             _snake: Snake::new(),
             _segment: SnakeSegment,
-            _player: player,
             _collidable: Collidable,
             _actor: Actor,
             _position: position,
@@ -76,7 +74,6 @@ pub struct SegmentBundle {
     _segment: SnakeSegment,
 
     // Game things
-    _player: Player,
     _collidable: Collidable,
 
     // Grid things
@@ -88,11 +85,10 @@ pub struct SegmentBundle {
     _sprite: SpriteBundle,
 }
 impl SegmentBundle {
-    pub fn new(player: Player, position: GridPosition) -> Self {
+    pub fn new(position: GridPosition) -> Self {
         Self {
             _segment: SnakeSegment,
             _collidable: Collidable,
-            _player: player,
             _position: position,
             _scale: GridScale::square(0.6),
             _sprite: SpriteBundle {

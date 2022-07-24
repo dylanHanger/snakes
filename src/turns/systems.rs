@@ -1,18 +1,11 @@
-use bevy::{
-    ecs::schedule::ShouldRun,
-    prelude::{Query, Res, ResMut, Time, With},
-};
+use bevy::prelude::{Query, Res, ResMut, Time, With};
 
 use crate::{movement::prelude::MoveIntent, Actor};
 
 use super::data::*;
 
-pub fn turn_ready(turn: Res<Turn>) -> ShouldRun {
-    if turn.ready {
-        ShouldRun::Yes
-    } else {
-        ShouldRun::No
-    }
+pub fn turn_ready(turn: Res<Turn>) -> bool {
+    turn.ready
 }
 pub fn reset_turn_system(mut turn: ResMut<Turn>) {
     turn.reset();

@@ -11,7 +11,7 @@ pub fn slither_system(
     for (mut snake, player, position, intent) in q.iter_mut() {
         // Ensure the tail grows with the snakes movement
         let segment = commands
-            .spawn_bundle(SegmentBundle::new(*player, *position))
+            .spawn_bundle(SegmentBundle::new(*position)).insert(*player)
             .id();
         snake.body.insert(0, segment);
 
