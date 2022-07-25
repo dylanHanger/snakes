@@ -2,7 +2,8 @@ use bevy::prelude::{Commands, Entity, EventReader, Query, Res};
 
 use crate::{
     grid::prelude::{GameGrid, GridPosition},
-    snakes::prelude::{Player, Snake, SnakeBundle},
+    players::prelude::Player,
+    snakes::prelude::{Snake, SnakeBundle},
 };
 
 use super::data::*;

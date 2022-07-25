@@ -3,6 +3,7 @@ mod death;
 mod food;
 mod grid;
 mod movement;
+mod players;
 mod snakes;
 mod turns;
 
@@ -18,6 +19,7 @@ use food::prelude::*;
 use grid::prelude::*;
 use iyes_loopless::prelude::ConditionSet;
 use movement::prelude::*;
+use players::prelude::{color_players, Player, PlayerColors};
 use snakes::prelude::*;
 use turns::prelude::*;
 
@@ -30,6 +32,7 @@ impl Plugin for SnakesPlugin {
         app.add_plugins(DefaultPlugins)
             .insert_resource(GameGrid::new(32, 32))
             .insert_resource(Turn::new(Duration::from_millis(100), false))
+            .insert_resource(PlayerColors::default())
             .add_stage_after(
                 CoreStage::Update,
                 TurnStage::PreTurn,
@@ -133,7 +136,8 @@ impl Plugin for SnakesPlugin {
             .add_system_set_to_stage(
                 CoreStage::PostUpdate,
                 SystemSet::new()
-                    .label("grid transforms")
+                    .label("rendering")
+                    .with_system(color_players)
                     .with_system(draw_grid_objects),
             );
     }

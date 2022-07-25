@@ -1,6 +1,6 @@
 use bevy::prelude::{Component, Entity};
 
-use crate::snakes::prelude::Player;
+use crate::players::prelude::Player;
 
 pub struct DeathEvent {
     pub target: Entity,

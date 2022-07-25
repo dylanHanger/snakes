@@ -1,5 +1,5 @@
 use bevy::{
-    prelude::{default, Bundle, Color, Component, Deref, DerefMut, Entity},
+    prelude::{default, Bundle, Color, Component, Entity},
     sprite::SpriteBundle,
 };
 
@@ -10,10 +10,6 @@ use crate::{
     Actor,
 };
 
-#[derive(Component, Deref, DerefMut, Clone, Copy, PartialEq, Eq)]
-pub struct Player {
-    pub id: u32,
-}
 
 #[derive(Component)]
 pub struct Snake {

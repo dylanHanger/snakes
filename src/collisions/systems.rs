@@ -3,7 +3,8 @@ use bevy::prelude::*;
 use crate::{
     death::prelude::DeathEvent,
     grid::prelude::{GameGrid, GridPosition},
-    snakes::prelude::{Player, Snake},
+    players::prelude::Player,
+    snakes::prelude::Snake,
 };
 
 use super::data::Collidable;

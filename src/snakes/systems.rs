@@ -1,8 +1,8 @@
 use bevy::prelude::{Commands, Entity, Query, Without};
 
-use crate::{grid::prelude::GridPosition, movement::prelude::MoveIntent};
+use crate::{grid::prelude::GridPosition, movement::prelude::MoveIntent, players::prelude::Player};
 
-use super::data::{Player, SegmentBundle, Snake};
+use super::data::{SegmentBundle, Snake};
 
 pub fn slither_system(
     mut commands: Commands,
