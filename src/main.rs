@@ -2,6 +2,7 @@ mod collisions;
 mod death;
 mod food;
 mod grid;
+mod input;
 mod movement;
 mod players;
 mod snakes;
@@ -18,6 +19,7 @@ use collisions::prelude::*;
 use death::prelude::*;
 use food::prelude::*;
 use grid::prelude::*;
+use input::prelude::*;
 use iyes_loopless::prelude::ConditionSet;
 use movement::prelude::*;
 use players::prelude::{
