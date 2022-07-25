@@ -1,3 +1,5 @@
+use std::str::FromStr;
+
 use bevy::prelude::{Component, Deref, DerefMut};
 
 #[derive(Debug, PartialEq, Eq, Clone, Copy)]
@@ -28,6 +30,21 @@ impl Direction {
             Direction::East => Direction::West,
             Direction::South => Direction::North,
             Direction::West => Direction::East,
+        }
+    }
+}
+impl FromStr for Direction {
+    type Err = ();
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        let s = s.to_lowercase();
+
+        match s.as_str() {
+            "0" | "north" | "n" => Ok(Direction::North),
+            "1" | "east" | "e" => Ok(Direction::East),
+            "2" | "south" | "s" => Ok(Direction::South),
+            "3" | "west" | "w" => Ok(Direction::West),
+            _ => Err(()),
         }
     }
 }

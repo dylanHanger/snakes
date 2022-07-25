@@ -36,7 +36,7 @@ impl Plugin for SnakesPlugin {
     fn build(&self, app: &mut App) {
         app.add_plugins(DefaultPlugins)
             .insert_resource(GameGrid::new(32, 32))
-            .insert_resource(Turn::new(Duration::from_millis(100), false))
+            .insert_resource(Turn::new(Duration::from_millis(0), true))
             .insert_resource(PlayerColors::default())
             .insert_resource(Scoreboard::new())
             .add_stage_after(
@@ -86,8 +86,17 @@ impl Plugin for SnakesPlugin {
             )
             .add_system_set_to_stage(
                 TurnStage::Request,
+                ConditionSet::new()
+                    .label("request")
+                    .run_if_not(turn_requested)
+                    .with_system(external_update_system)
+                    .into(),
+            )
+            .add_system_set_to_stage(
+                TurnStage::Request,
                 SystemSet::new()
                     .label("input")
+                    .with_system(external_moves_system)
                     .with_system(random_moves_system)
                     .with_system(keyboard_moves_system),
             )
@@ -144,7 +153,6 @@ impl Plugin for SnakesPlugin {
                 SystemSet::new()
                     .label("rendering")
                     .with_system(scoreboard_system)
-                    .with_system(display_scoreboard)
                     .with_system(color_players)
                     .with_system(draw_grid_objects),
             );
@@ -156,13 +164,16 @@ fn setup(mut commands: Commands, mut scoreboard: ResMut<Scoreboard>) {
         .spawn()
         .insert(Player { id: 0 })
         .insert(Respawning { time: 0 })
-        .insert(KeyboardMoves::wasd());
+        .insert(RandomMoves);
     scoreboard.insert_new(Player { id: 0 });
     commands
         .spawn()
         .insert(Player { id: 1 })
-        .insert(Respawning { time: 5 })
-        .insert(RandomMoves);
+        .insert(Respawning { time: 0 })
+        .insert(ExternalMoves::new(
+            "python".to_string(),
+            vec!["monty.py".to_string()],
+        ));
     scoreboard.insert_new(Player { id: 1 });
 }
 

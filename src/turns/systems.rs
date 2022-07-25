@@ -7,6 +7,9 @@ use super::data::*;
 pub fn turn_ready(turn: Res<Turn>) -> bool {
     turn.ready
 }
+pub fn turn_requested(turn: Res<Turn>) -> bool {
+    turn.requested
+}
 pub fn reset_turn_system(mut turn: ResMut<Turn>) {
     turn.reset();
 }

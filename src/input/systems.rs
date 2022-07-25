@@ -1,12 +1,13 @@
-use bevy::prelude::{Commands, Entity, Input, KeyCode, Query, Res, With, Without};
+use bevy::prelude::{Commands, Entity, Input, KeyCode, Query, Res, ResMut, With, Without};
 use rand::Rng;
 
 use crate::{
     movement::prelude::{Direction, MoveIntent},
+    turns::prelude::Turn,
     Actor,
 };
 
-use super::data::{KeyboardMoves, RandomMoves};
+use super::data::{ExternalMoves, KeyboardMoves, RandomMoves};
 
 pub fn random_moves_system(
     mut commands: Commands,
@@ -47,5 +48,23 @@ pub fn keyboard_moves_system(
         if let Some(dir) = direction {
             commands.entity(e).insert(MoveIntent::from(dir));
         }
+    }
+}
+
+pub fn external_moves_system(
+    mut commands: Commands,
+    agents: Query<(Entity, &ExternalMoves), With<Actor>>,
+) {
+    for (e, agent) in agents.iter() {
+        if let Some(answer) = agent.recv() {
+            commands.entity(e).insert(MoveIntent::from(answer));
+        }
+    }
+}
+
+pub fn external_update_system(mut turn: ResMut<Turn>, agents: Query<&ExternalMoves, With<Actor>>) {
+    turn.requested = true;
+    for agent in agents.iter() {
+        agent.send("\n".to_string());
     }
 }

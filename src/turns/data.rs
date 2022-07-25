@@ -13,6 +13,7 @@ pub enum TurnStage {
 
 pub struct Turn {
     pub ready: bool,
+    pub requested: bool,
 
     pub timer: Timer,
     pub wait_for_all: bool,
@@ -21,12 +22,14 @@ impl Turn {
     pub fn new(duration: Duration, wait_for_all: bool) -> Self {
         Self {
             ready: false,
+            requested: false,
             timer: Timer::new(duration, false),
             wait_for_all,
         }
     }
     pub fn reset(&mut self) {
         self.ready = false;
+        self.requested = false;
         self.timer.reset();
     }
 }
