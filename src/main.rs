@@ -11,7 +11,8 @@ use std::time::Duration;
 
 use bevy::prelude::{
     default, App, ClearColor, Color, Commands, Component, CoreStage, DefaultPlugins,
-    IntoChainSystem, OrthographicCameraBundle, Plugin, SystemSet, SystemStage, WindowDescriptor,
+    IntoChainSystem, OrthographicCameraBundle, Plugin, ResMut, SystemSet, SystemStage,
+    WindowDescriptor,
 };
 use collisions::prelude::*;
 use death::prelude::*;
@@ -19,7 +20,9 @@ use food::prelude::*;
 use grid::prelude::*;
 use iyes_loopless::prelude::ConditionSet;
 use movement::prelude::*;
-use players::prelude::{color_players, Player, PlayerColors};
+use players::prelude::{
+    color_players, display_scoreboard, scoreboard_system, Player, PlayerColors, Scoreboard,
+};
 use snakes::prelude::*;
 use turns::prelude::*;
 
@@ -33,6 +36,7 @@ impl Plugin for SnakesPlugin {
             .insert_resource(GameGrid::new(32, 32))
             .insert_resource(Turn::new(Duration::from_millis(100), false))
             .insert_resource(PlayerColors::default())
+            .insert_resource(Scoreboard::new())
             .add_stage_after(
                 CoreStage::Update,
                 TurnStage::PreTurn,
@@ -137,23 +141,27 @@ impl Plugin for SnakesPlugin {
                 CoreStage::PostUpdate,
                 SystemSet::new()
                     .label("rendering")
+                    .with_system(scoreboard_system)
+                    .with_system(display_scoreboard)
                     .with_system(color_players)
                     .with_system(draw_grid_objects),
             );
     }
 }
 
-fn setup(mut commands: Commands) {
+fn setup(mut commands: Commands, mut scoreboard: ResMut<Scoreboard>) {
     commands
         .spawn()
         .insert(Player { id: 0 })
         .insert(Respawning { time: 0 })
         .insert(KeyboardMoves::wasd());
+    scoreboard.insert_new(Player { id: 0 });
     commands
         .spawn()
         .insert(Player { id: 1 })
         .insert(Respawning { time: 5 })
         .insert(RandomMoves);
+    scoreboard.insert_new(Player { id: 1 });
 }
 
 fn setup_camera(mut commands: Commands) {

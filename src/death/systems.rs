@@ -1,8 +1,8 @@
-use bevy::prelude::{Commands, Entity, EventReader, Query, Res};
+use bevy::prelude::{Commands, Entity, EventReader, Query, Res, ResMut};
 
 use crate::{
     grid::prelude::{GameGrid, GridPosition},
-    players::prelude::Player,
+    players::prelude::{Player, Scoreboard},
     snakes::prelude::{Snake, SnakeBundle},
 };
 
@@ -12,6 +12,8 @@ pub fn death_system(
     mut commands: Commands,
     mut snakes: Query<&mut Snake>,
     mut deaths: EventReader<DeathEvent>,
+    players: Query<&Player>,
+    mut scoreboard: ResMut<Scoreboard>,
 ) {
     for &DeathEvent { target, culprit } in deaths.iter() {
         if let Ok(mut snake) = snakes.get_mut(target) {
@@ -22,6 +24,23 @@ pub fn death_system(
                 .entity(target)
                 .remove_bundle::<SnakeBundle>()
                 .insert(Respawning { time: 5 });
+
+            // Update scores
+            if let Ok(&player) = players.get(target) {
+                if let Some(score) = scoreboard.get_mut(&player) {
+                    score.deaths += 1;
+                }
+
+                if let Some(other_player) = culprit {
+                    if player != other_player {
+                        if let Some(score) = scoreboard.get_mut(&other_player) {
+                            score.kills += 1;
+                        }
+                    } else if let Some(score) = scoreboard.get_mut(&player) {
+                        score.kills -= 1;
+                    }
+                }
+            }
         }
     }
 }
