@@ -7,8 +7,6 @@ pub struct DeathConfig {
 }
 impl Default for DeathConfig {
     fn default() -> Self {
-        Self {
-            respawn_time: 10,
-        }
+        Self { respawn_time: 10 }
     }
 }
