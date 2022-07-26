@@ -50,7 +50,7 @@ impl Plugin for SnakesPlugin {
     fn build(&self, app: &mut App) {
         app.add_plugins(DefaultPlugins)
             .insert_resource(GameGrid::new(32, 32))
-            .insert_resource(Turn::new(Duration::from_millis(0), true))
+            .insert_resource(Turn::new(Duration::from_millis(100), false))
             .insert_resource(PlayerColors::default())
             .insert_resource(Scoreboard::new())
             .insert_resource(ProcessedEntities::new())
@@ -94,8 +94,7 @@ impl Plugin for SnakesPlugin {
                 TurnStage::PreTurn,
                 ConditionSet::new()
                     .label("spawn")
-                    // .with_system(spawn_snakes_system)
-                    .run_if(turn_ready)
+                    .run_if_not(turn_requested)
                     .run_if(can_spawn_food)
                     .with_system(spawn_food_system)
                     .into(),
@@ -198,29 +197,29 @@ fn setup(mut commands: Commands, mut scoreboard: ResMut<Scoreboard>) {
         .spawn()
         .insert(Player { id: 0 })
         .insert(Respawning { time: 0 })
-        .insert(AiMoves::Easy);
+        .insert(KeyboardMoves::wasd());
     scoreboard.insert_new(Player { id: 0 });
     commands
         .spawn()
         .insert(Player { id: 1 })
         .insert(Respawning { time: 0 })
-        .insert(AiMoves::Medium);
+        .insert(KeyboardMoves::arrows());
     scoreboard.insert_new(Player { id: 1 });
-    commands
-        .spawn()
-        .insert(Player { id: 2 })
-        .insert(Respawning { time: 0 })
-        .insert(AiMoves::Hard);
-    scoreboard.insert_new(Player { id: 2 });
-    commands
-        .spawn()
-        .insert(Player { id: 3 })
-        .insert(Respawning { time: 0 })
-        .insert(ExternalMoves::new(
-            "python".to_string(),
-            vec!["monty.py".to_string()],
-        ));
-    scoreboard.insert_new(Player { id: 3 });
+    // commands
+    //     .spawn()
+    //     .insert(Player { id: 2 })
+    //     .insert(Respawning { time: 0 })
+    //     .insert(AiMoves::Hard);
+    // scoreboard.insert_new(Player { id: 2 });
+    // commands
+    //     .spawn()
+    //     .insert(Player { id: 3 })
+    //     .insert(Respawning { time: 0 })
+    //     .insert(ExternalMoves::new(
+    //         "python".to_string(),
+    //         vec!["monty.py".to_string()],
+    //     ));
+    // scoreboard.insert_new(Player { id: 3 });
 }
 
 fn setup_camera(mut commands: Commands) {

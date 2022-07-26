@@ -28,6 +28,14 @@ impl KeyboardMoves {
             west: KeyCode::A,
         }
     }
+    pub fn arrows() -> Self {
+        Self {
+            north: KeyCode::Up,
+            east: KeyCode::Right,
+            south: KeyCode::Down,
+            west: KeyCode::Left,
+        }
+    }
 }
 
 #[derive(Component)]

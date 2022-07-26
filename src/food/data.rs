@@ -7,7 +7,7 @@ pub struct Food {
 }
 impl Food {
     pub fn new(last_for_turns: u32) -> Self {
-        let initial_value = (10 * last_for_turns) as f32;
+        let initial_value = (last_for_turns as f32 / 10.0);
         Self {
             initial_value,
             value: initial_value,

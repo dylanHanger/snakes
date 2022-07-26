@@ -34,7 +34,7 @@ pub fn spawn_food_system(
         .insert(position)
         .insert(GridScale::square(0.5))
         .insert(Rottable)
-        .insert(Food::new(5));
+        .insert(Food::new(75));
 }
 
 pub fn eat_food_system(
