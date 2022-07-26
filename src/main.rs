@@ -13,8 +13,8 @@ use std::time::Duration;
 use bevy::{
     prelude::{
         default, App, ClearColor, Color, Commands, Component, CoreStage, DefaultPlugins, Deref,
-        DerefMut, Entity, IntoChainSystem, OrthographicCameraBundle, Plugin, ResMut, SystemSet,
-        SystemStage, WindowDescriptor,
+        DerefMut, Entity, IntoChainSystem, OrthographicCameraBundle, Plugin, ResMut, StartupStage,
+        SystemSet, SystemStage, WindowDescriptor,
     },
     utils::HashSet,
 };
@@ -82,6 +82,7 @@ impl Plugin for SnakesPlugin {
             .add_event::<DeathEvent>()
             .add_startup_system(setup)
             .add_startup_system(setup_camera)
+            .add_startup_system_to_stage(StartupStage::PostStartup, init_external_agents)
             .add_system_set_to_stage(
                 CoreStage::PreUpdate,
                 SystemSet::new()
@@ -150,9 +151,11 @@ impl Plugin for SnakesPlugin {
             )
             .add_system_set_to_stage(
                 TurnStage::PostSimulate,
-                SystemSet::new()
+                ConditionSet::new()
                     .after("collisions")
-                    .with_system(rotting_system),
+                    .run_if(turn_ready)
+                    .with_system(rotting_system)
+                    .into(),
             )
             .add_system_set_to_stage(
                 TurnStage::PostSimulate,
@@ -209,6 +212,15 @@ fn setup(mut commands: Commands, mut scoreboard: ResMut<Scoreboard>) {
         .insert(Respawning { time: 0 })
         .insert(AiMoves::Hard);
     scoreboard.insert_new(Player { id: 2 });
+    commands
+        .spawn()
+        .insert(Player { id: 3 })
+        .insert(Respawning { time: 0 })
+        .insert(ExternalMoves::new(
+            "python".to_string(),
+            vec!["monty.py".to_string()],
+        ));
+    scoreboard.insert_new(Player { id: 3 });
 }
 
 fn setup_camera(mut commands: Commands) {

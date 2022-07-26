@@ -66,10 +66,59 @@ pub fn external_moves_system(
     }
 }
 
-pub fn external_update_system(mut turn: ResMut<Turn>, agents: Query<&ExternalMoves, With<Actor>>) {
+pub fn init_external_agents(agents: Query<(&ExternalMoves, &Player)>, grid: Res<GameGrid>) {
+    for (agent, player) in agents.iter() {
+        println!("Starting game");
+        // The game size
+        agent.send(format!("{} {}\n", grid.width, grid.height));
+
+        // Your snake ID
+        agent.send(format!("{}\n", player.id));
+    }
+}
+
+pub fn external_update_system(
+    mut turn: ResMut<Turn>,
+    agents: Query<&ExternalMoves, With<Actor>>,
+    snakes: Query<(&GridPosition, &Snake, Option<&Player>)>,
+    segments: Query<&GridPosition, With<SnakeSegment>>,
+    food: Query<&GridPosition, With<Food>>,
+) {
     turn.requested = true;
+
+    let mut sorted_snakes = snakes
+        .iter()
+        .collect::<Vec<(&GridPosition, &Snake, Option<&Player>)>>();
+    sorted_snakes.sort_by_key(|(_, _, p)| {
+        if let Some(player) = p {
+            player.id
+        } else {
+            u32::MAX
+        }
+    });
     for agent in agents.iter() {
-        agent.send("\n".to_string());
+        // Send food
+        agent.send(format!("{}\n", food.iter().count()));
+        for position in food.iter() {
+            agent.send(format!("{} {}\n", position.x, position.y))
+        }
+
+        // Send snakes
+        agent.send(format!("{}\n", sorted_snakes.len()));
+        for (position, snake, player) in &sorted_snakes {
+            if let Some(player) = player {
+                agent.send(format!("{} ", player.id));
+            } else {
+                agent.send("-1".to_string());
+            }
+            agent.send(format!("{} {} {}", snake.length, position.x, position.y));
+            for &body_part in &snake.body {
+                if let Ok(position) = segments.get(body_part) {
+                    agent.send(format!(" {} {}", position.x, position.y))
+                }
+            }
+            agent.send("\n".to_string());
+        }
     }
 }
 

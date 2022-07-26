@@ -59,9 +59,7 @@ impl ExternalMoves {
                     panic!("Could not listen to child process: {:?}", e);
                 } else {
                     let msg = buf.trim().to_string();
-                    if let Err(e) = sender.send(msg) {
-                        panic!("{:?}", e);
-                    }
+                    sender.send(msg).unwrap_or_default();
                 }
             }
         });
