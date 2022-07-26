@@ -1,13 +1,14 @@
 use std::ops::{Add, Mul};
 
 use bevy::prelude::{
-    default, Color, Commands, Entity, EventWriter, Query, Res, Sprite, SpriteBundle, With,
+    default, Color, Commands, Entity, EventWriter, Query, Res, ResMut, Sprite, SpriteBundle, With,
 };
 
 use crate::{
     death::prelude::DeathEvent,
     grid::prelude::{GameGrid, GridPosition, GridScale},
     snakes::prelude::Snake,
+    ProcessedEntities,
 };
 
 use super::data::{Food, Rottable};
@@ -40,6 +41,7 @@ pub fn eat_food_system(
     mut commands: Commands,
     mut snakes: Query<(Entity, &mut Snake, &GridPosition)>,
     food: Query<(Entity, &Food, &GridPosition)>,
+    mut processed_entities: ResMut<ProcessedEntities>,
     mut deaths: EventWriter<DeathEvent>,
 ) {
     for (snake_ent, mut snake, snake_pos) in snakes.iter_mut() {
@@ -59,7 +61,11 @@ pub fn eat_food_system(
                 } else {
                     snake.length += growth as u32;
                 }
-                commands.entity(food_ent).despawn();
+
+                if !processed_entities.contains(&food_ent) {
+                    commands.entity(food_ent).despawn();
+                    processed_entities.insert(food_ent);
+                }
             }
         }
     }

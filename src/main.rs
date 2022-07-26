@@ -10,17 +10,20 @@ mod turns;
 
 use std::time::Duration;
 
-use bevy::prelude::{
-    default, App, ClearColor, Color, Commands, Component, CoreStage, DefaultPlugins,
-    IntoChainSystem, OrthographicCameraBundle, Plugin, ResMut, SystemSet, SystemStage,
-    WindowDescriptor,
+use bevy::{
+    prelude::{
+        default, App, ClearColor, Color, Commands, Component, CoreStage, DefaultPlugins, Deref,
+        DerefMut, Entity, IntoChainSystem, OrthographicCameraBundle, Plugin, ResMut, SystemSet,
+        SystemStage, WindowDescriptor,
+    },
+    utils::HashSet,
 };
 use collisions::prelude::*;
 use death::prelude::*;
 use food::prelude::*;
 use grid::prelude::*;
 use input::prelude::*;
-use iyes_loopless::{condition::IntoConditionalExclusiveSystem, prelude::ConditionSet};
+use iyes_loopless::prelude::ConditionSet;
 use movement::prelude::*;
 use players::prelude::{color_players, scoreboard_system, Player, PlayerColors, Scoreboard};
 use snakes::prelude::*;
@@ -28,6 +31,19 @@ use turns::prelude::*;
 
 #[derive(Component)]
 pub struct Actor;
+
+#[derive(Deref, DerefMut)]
+pub struct ProcessedEntities(HashSet<Entity>);
+impl ProcessedEntities {
+    pub fn new() -> Self {
+        Self(HashSet::new())
+    }
+}
+impl Default for ProcessedEntities {
+    fn default() -> Self {
+        Self::new()
+    }
+}
 
 struct SnakesPlugin;
 impl Plugin for SnakesPlugin {
@@ -37,6 +53,7 @@ impl Plugin for SnakesPlugin {
             .insert_resource(Turn::new(Duration::from_millis(0), true))
             .insert_resource(PlayerColors::default())
             .insert_resource(Scoreboard::new())
+            .insert_resource(ProcessedEntities::new())
             .add_stage_after(
                 CoreStage::Update,
                 TurnStage::PreTurn,
