@@ -79,11 +79,13 @@ pub fn eat_food_system(
 pub fn rotting_system(
     mut commands: Commands,
     mut rottable_foods: Query<(Entity, &mut Food), With<Rottable>>,
+    mut processed_entities: ResMut<ProcessedEntities>,
 ) {
     for (e, mut food) in rottable_foods.iter_mut() {
         food.value -= 0.1;
-        if food.value < 0. {
-            commands.entity(e).despawn()
+        if food.value < 0. && !processed_entities.contains(&e) {
+            commands.entity(e).despawn();
+            processed_entities.insert(e);
         }
     }
 }
