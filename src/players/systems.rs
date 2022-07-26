@@ -24,8 +24,8 @@ pub fn color_players(
 pub fn scoreboard_system(players: Query<(&Snake, &Player)>, mut scoreboard: ResMut<Scoreboard>) {
     for (snake, player) in players.iter() {
         let score = scoreboard.get_mut(player).unwrap();
-        score.max_length = usize::max(score.max_length, snake.length);
-        score.current_length = snake.length;
+        score.current_length = 1 + snake.body.len();
+        score.max_length = usize::max(score.max_length, score.current_length);
     }
 }
 
