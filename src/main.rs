@@ -36,7 +36,7 @@ impl Plugin for SnakesPlugin {
     fn build(&self, app: &mut App) {
         app.add_plugins(DefaultPlugins)
             .insert_resource(GameGrid::new(32, 32))
-            .insert_resource(Turn::new(Duration::from_millis(0), true))
+            .insert_resource(Turn::new(Duration::from_millis(50), false))
             .insert_resource(PlayerColors::default())
             .insert_resource(Scoreboard::new())
             .add_stage_after(
@@ -127,6 +127,12 @@ impl Plugin for SnakesPlugin {
             .add_system_set_to_stage(
                 TurnStage::PostSimulate,
                 SystemSet::new()
+                    .after("collisions")
+                    .with_system(rotting_system),
+            )
+            .add_system_set_to_stage(
+                TurnStage::PostSimulate,
+                SystemSet::new()
                     .label("deaths")
                     .after("collisions")
                     .with_system(death_system),
@@ -164,7 +170,7 @@ fn setup(mut commands: Commands, mut scoreboard: ResMut<Scoreboard>) {
         .spawn()
         .insert(Player { id: 0 })
         .insert(Respawning { time: 0 })
-        .insert(RandomMoves);
+        .insert(KeyboardMoves::wasd());
     scoreboard.insert_new(Player { id: 0 });
     commands
         .spawn()

@@ -10,10 +10,9 @@ use crate::{
     Actor,
 };
 
-
 #[derive(Component)]
 pub struct Snake {
-    pub length: usize,
+    pub length: u32,
     pub body: Vec<Entity>,
 
     pub direction: Direction,

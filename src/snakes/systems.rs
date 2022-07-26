@@ -18,7 +18,7 @@ pub fn slither_system(
 
         snake.body.insert(0, segment.id());
 
-        while snake.body.len() >= snake.length {
+        while snake.body.len() >= snake.length as usize {
             if let Some(tail) = snake.body.pop() {
                 commands.entity(tail).despawn()
             }
