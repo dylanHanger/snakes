@@ -13,13 +13,13 @@ use crate::movement::prelude::Direction;
 pub struct RandomMoves;
 
 #[derive(Component)]
-pub struct KeyboardMoves {
+pub struct KeyboardInput {
     pub north: KeyCode,
     pub east: KeyCode,
     pub south: KeyCode,
     pub west: KeyCode,
 }
-impl KeyboardMoves {
+impl KeyboardInput {
     pub fn wasd() -> Self {
         Self {
             north: KeyCode::W,
@@ -39,11 +39,11 @@ impl KeyboardMoves {
 }
 
 #[derive(Component)]
-pub struct ExternalMoves {
+pub struct CustomAi {
     sender: Sender<String>,
     receiver: Receiver<String>,
 }
-impl ExternalMoves {
+impl CustomAi {
     fn spawn_comms_threads(child: &mut Child, sender: Sender<String>, receiver: Receiver<String>) {
         let mut stdin = child.stdin.take().unwrap();
         let stdout = child.stdout.take().unwrap();
@@ -104,7 +104,7 @@ impl ExternalMoves {
 }
 
 #[derive(Component, PartialEq, Eq, PartialOrd, Ord)]
-pub enum AiMoves {
+pub enum BuiltinAi {
     Easy,
     Medium,
     Hard,

@@ -11,7 +11,7 @@ use crate::{
     Actor,
 };
 
-use super::data::{AiMoves, ExternalMoves, KeyboardMoves, RandomMoves};
+use super::data::{BuiltinAi, CustomAi, KeyboardInput, RandomMoves};
 
 pub fn random_moves_system(
     mut commands: Commands,
@@ -33,7 +33,7 @@ pub fn random_moves_system(
 
 pub fn keyboard_moves_system(
     mut commands: Commands,
-    q: Query<(Entity, &KeyboardMoves), With<Actor>>,
+    q: Query<(Entity, &KeyboardInput), With<Actor>>,
     input: Res<Input<KeyCode>>,
 ) {
     for (e, controls) in q.iter() {
@@ -57,7 +57,7 @@ pub fn keyboard_moves_system(
 
 pub fn external_moves_system(
     mut commands: Commands,
-    agents: Query<(Entity, &ExternalMoves), With<Actor>>,
+    agents: Query<(Entity, &CustomAi), With<Actor>>,
 ) {
     for (e, agent) in agents.iter() {
         if let Some(answer) = agent.recv() {
@@ -66,7 +66,7 @@ pub fn external_moves_system(
     }
 }
 
-pub fn init_external_agents(agents: Query<(&ExternalMoves, &Player)>, grid: Res<GameGrid>) {
+pub fn init_external_agents(agents: Query<(&CustomAi, &Player)>, grid: Res<GameGrid>) {
     for (agent, player) in agents.iter() {
         println!("Starting game");
         // The game size
@@ -79,7 +79,7 @@ pub fn init_external_agents(agents: Query<(&ExternalMoves, &Player)>, grid: Res<
 
 pub fn external_update_system(
     mut turn: ResMut<Turn>,
-    agents: Query<&ExternalMoves, With<Actor>>,
+    agents: Query<&CustomAi, With<Actor>>,
     snakes: Query<(&GridPosition, &Snake, Option<&Player>)>,
     segments: Query<&GridPosition, With<SnakeSegment>>,
     food: Query<&GridPosition, With<Food>>,
@@ -124,7 +124,7 @@ pub fn external_update_system(
 
 pub fn ai_moves_system(
     mut commands: Commands,
-    agents: Query<(Entity, &AiMoves, &GridPosition, Option<&Snake>), With<Actor>>,
+    agents: Query<(Entity, &BuiltinAi, &GridPosition, Option<&Snake>), With<Actor>>,
     positions: Query<(
         &GridPosition,
         Option<&Player>,
@@ -147,65 +147,67 @@ pub fn ai_moves_system(
         }
     }
 
-    let compute_utility = |direction: Direction, position: &GridPosition, agent: &AiMoves| -> i32 {
-        let mut utility = 0;
+    let compute_utility =
+        |direction: Direction, position: &GridPosition, agent: &BuiltinAi| -> i32 {
+            let mut utility = 0;
 
-        let next_position = &position.step(direction);
+            let next_position = &position.step(direction);
 
-        // Find best food to go to from that position
-        let mut best_food = None;
-        let mut best_distance = i32::MAX;
+            // Find best food to go to from that position
+            let mut best_food = None;
+            let mut best_distance = i32::MAX;
 
-        let distance = |a: &GridPosition, b: &GridPosition| (a.x - b.x).abs() + (a.y - b.y).abs();
+            let distance =
+                |a: &GridPosition, b: &GridPosition| (a.x - b.x).abs() + (a.y - b.y).abs();
 
-        for food_position in &food_positions {
-            let d = distance(food_position, next_position);
+            for food_position in &food_positions {
+                let d = distance(food_position, next_position);
 
-            if d < best_distance {
-                best_food = Some(food_position);
-                best_distance = d;
-            }
-        }
-
-        // Add to the utility if this direction moves us closer to the best apple
-        if let Some(food_pos) = best_food {
-            let d = distance(next_position, food_pos);
-            utility -= d;
-
-            if agent > &AiMoves::Medium {
-                let tile = map[*food_pos];
-                if let CellType::Food { value } = tile {
-                    utility += value.floor() as i32 - d;
+                if d < best_distance {
+                    best_food = Some(food_position);
+                    best_distance = d;
                 }
             }
-        }
 
-        if agent > &AiMoves::Easy {
-            if !grid.contains_position(next_position) {
-                utility -= 500
-            } else if let CellType::Snake { .. } = map[*next_position] {
-                utility -= 1000;
-            }
-        }
+            // Add to the utility if this direction moves us closer to the best apple
+            if let Some(food_pos) = best_food {
+                let d = distance(next_position, food_pos);
+                utility -= d;
 
-        if agent > &AiMoves::Medium {
-            let num_neighbours = Direction::cardinals()
-                .iter()
-                .map(|&d| {
-                    let next_next_position = next_position.step(d);
-                    if !grid.contains_position(&next_next_position) {
-                        return 0.25;
-                    } else if let CellType::Snake { .. } = map[next_next_position] {
-                        return 1.0;
+                if agent > &BuiltinAi::Medium {
+                    let tile = map[*food_pos];
+                    if let CellType::Food { value } = tile {
+                        utility += value.floor() as i32 - d;
                     }
-                    -0.25
-                })
-                .sum::<f32>();
-            utility -= 5 * num_neighbours.round() as i32;
-        }
+                }
+            }
 
-        utility
-    };
+            if agent > &BuiltinAi::Easy {
+                if !grid.contains_position(next_position) {
+                    utility -= 500
+                } else if let CellType::Snake { .. } = map[*next_position] {
+                    utility -= 1000;
+                }
+            }
+
+            if agent > &BuiltinAi::Medium {
+                let num_neighbours = Direction::cardinals()
+                    .iter()
+                    .map(|&d| {
+                        let next_next_position = next_position.step(d);
+                        if !grid.contains_position(&next_next_position) {
+                            return 0.25;
+                        } else if let CellType::Snake { .. } = map[next_next_position] {
+                            return 1.0;
+                        }
+                        -0.25
+                    })
+                    .sum::<f32>();
+                utility -= 5 * num_neighbours.round() as i32;
+            }
+
+            utility
+        };
 
     // Compute move for each player
     let cardinals = Direction::cardinals();

@@ -54,9 +54,7 @@ impl Plugin for SnakesPlugin {
             .insert_resource(PlayerColors::default())
             .insert_resource(Scoreboard::new())
             .insert_resource(ProcessedEntities::new())
-            .insert_resource(DeathConfig {
-                respawn_time: 10
-            })
+            .insert_resource(DeathConfig { respawn_time: 10 })
             .insert_resource(FoodConfig {
                 last_for_turns: 75,
                 growth_amount: 5,
@@ -216,19 +214,19 @@ fn setup(mut commands: Commands, mut scoreboard: ResMut<Scoreboard>) {
         .spawn()
         .insert(Player { id: 0 })
         .insert(Respawning { time: 0 })
-        .insert(AiMoves::Medium);
+        .insert(BuiltinAi::Medium);
     scoreboard.insert_new(Player { id: 0 });
     commands
         .spawn()
         .insert(Player { id: 2 })
         .insert(Respawning { time: 0 })
-        .insert(AiMoves::Hard);
+        .insert(BuiltinAi::Hard);
     scoreboard.insert_new(Player { id: 2 });
     commands
         .spawn()
         .insert(Player { id: 3 })
         .insert(Respawning { time: 0 })
-        .insert(ExternalMoves::new(
+        .insert(CustomAi::new(
             "python".to_string(),
             vec!["monty.py".to_string()],
         ));
