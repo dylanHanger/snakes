@@ -50,6 +50,7 @@ impl<'de> Deserialize<'de> for GameConfig {
             height: u32,
 
             timeout: u64,
+            turns: u64,
             wait: bool,
 
             respawn: u32,
@@ -64,6 +65,7 @@ impl<'de> Deserialize<'de> for GameConfig {
                     width: 32,
                     height: 32,
                     timeout: 100,
+                    turns: 1500,
                     wait: false,
                     respawn: 10,
                     food: Default::default(),
@@ -76,6 +78,7 @@ impl<'de> Deserialize<'de> for GameConfig {
             width,
             height,
             timeout,
+            turns,
             wait,
             respawn,
             food,
@@ -90,6 +93,7 @@ impl<'de> Deserialize<'de> for GameConfig {
             turns: TurnConfig {
                 turn_time: timeout,
                 wait_for_all: wait,
+                max_turns: turns,
             },
 
             food,

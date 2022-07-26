@@ -95,10 +95,12 @@ impl Plugin for SnakesPlugin {
             .add_startup_system_to_stage(StartupStage::PostStartup, init_external_agents)
             .add_system_set_to_stage(
                 CoreStage::PreUpdate,
-                SystemSet::new()
+                ConditionSet::new()
                     .label("wait")
+                    .run_if_not(turns_finished)
                     .with_system(turn_timer_system)
-                    .with_system(turn_ready_system),
+                    .with_system(turn_ready_system)
+                    .into(),
             )
             .add_system_set_to_stage(
                 TurnStage::PreTurn,
@@ -187,7 +189,7 @@ impl Plugin for SnakesPlugin {
                 ConditionSet::new()
                     .label("end")
                     .run_if(turn_ready)
-                    .with_system(reset_turn_system)
+                    .with_system(end_turn_system)
                     .into(),
             )
             .add_system_set_to_stage(
