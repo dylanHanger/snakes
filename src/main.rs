@@ -1,4 +1,5 @@
 mod collisions;
+mod config;
 mod death;
 mod food;
 mod grid;
@@ -8,24 +9,28 @@ mod players;
 mod snakes;
 mod turns;
 
-use std::time::Duration;
+use std::path::PathBuf;
 
 use bevy::{
     prelude::{
         default, App, ClearColor, Color, Commands, Component, CoreStage, DefaultPlugins, Deref,
-        DerefMut, Entity, IntoChainSystem, OrthographicCameraBundle, Plugin, ResMut, StartupStage,
-        SystemSet, SystemStage, WindowDescriptor,
+        DerefMut, Entity, IntoChainSystem, OrthographicCameraBundle, Plugin, Res, ResMut,
+        StartupStage, SystemSet, SystemStage, WindowDescriptor,
     },
     utils::HashSet,
 };
 use collisions::prelude::*;
+use config::read_config_from_file;
 use death::prelude::*;
 use food::prelude::*;
 use grid::prelude::*;
 use input::prelude::*;
 use iyes_loopless::prelude::ConditionSet;
 use movement::prelude::*;
-use players::prelude::{color_players, scoreboard_system, Player, PlayerColors, Scoreboard};
+use players::{
+    config::{PlayerConfig, PlayerType},
+    prelude::{color_players, scoreboard_system, Player, PlayerColors, Scoreboard},
+};
 use snakes::prelude::*;
 use turns::prelude::*;
 
@@ -48,17 +53,17 @@ impl Default for ProcessedEntities {
 struct SnakesPlugin;
 impl Plugin for SnakesPlugin {
     fn build(&self, app: &mut App) {
+        let config = read_config_from_file(&PathBuf::from("config.yaml"));
+
         app.add_plugins(DefaultPlugins)
-            .insert_resource(GameGrid::new(32, 32))
-            .insert_resource(Turn::new(Duration::from_millis(100), false))
+            .insert_resource(config.grid)
+            .insert_resource(Turn::from(config.turns))
             .insert_resource(PlayerColors::default())
             .insert_resource(Scoreboard::new())
             .insert_resource(ProcessedEntities::new())
-            .insert_resource(DeathConfig { respawn_time: 10 })
-            .insert_resource(FoodConfig {
-                last_for_turns: 75,
-                growth_amount: 5,
-            })
+            .insert_resource(config.death)
+            .insert_resource(config.food)
+            .insert_resource(config.players)
             .add_stage_after(
                 CoreStage::Update,
                 TurnStage::PreTurn,
@@ -197,40 +202,29 @@ impl Plugin for SnakesPlugin {
     }
 }
 
-fn setup(mut commands: Commands, mut scoreboard: ResMut<Scoreboard>) {
-    // commands
-    //     .spawn()
-    //     .insert(Player { id: 0 })
-    //     .insert(Respawning { time: 0 })
-    //     .insert(KeyboardMoves::wasd());
-    // scoreboard.insert_new(Player { id: 0 });
-    // commands
-    //     .spawn()
-    //     .insert(Player { id: 1 })
-    //     .insert(Respawning { time: 0 })
-    //     .insert(KeyboardMoves::arrows());
-    // scoreboard.insert_new(Player { id: 1 });
-    commands
-        .spawn()
-        .insert(Player { id: 0 })
-        .insert(Respawning { time: 0 })
-        .insert(BuiltinAi::Medium);
-    scoreboard.insert_new(Player { id: 0 });
-    commands
-        .spawn()
-        .insert(Player { id: 2 })
-        .insert(Respawning { time: 0 })
-        .insert(BuiltinAi::Hard);
-    scoreboard.insert_new(Player { id: 2 });
-    commands
-        .spawn()
-        .insert(Player { id: 3 })
-        .insert(Respawning { time: 0 })
-        .insert(CustomAi::new(
-            "python".to_string(),
-            vec!["monty.py".to_string()],
-        ));
-    scoreboard.insert_new(Player { id: 3 });
+fn setup(
+    mut commands: Commands,
+    mut scoreboard: ResMut<Scoreboard>,
+    players: Res<Vec<PlayerConfig>>,
+) {
+    for (id, config) in players.iter().enumerate() {
+        let player = Player { id: id as u32 };
+        scoreboard.add_player(player);
+        let e = commands
+            .spawn()
+            .insert(player)
+            .insert(Respawning { time: 0 })
+            .id();
+
+        match &config.player_type {
+            PlayerType::Custom { executable, args } => commands
+                .entity(e)
+                .insert(CustomAi::new(executable.to_string(), args.to_vec())),
+            PlayerType::Builtin { difficulty } => commands.entity(e).insert(*difficulty),
+            PlayerType::Keyboard { keys } => commands.entity(e).insert(*keys),
+            PlayerType::Random => commands.entity(e).insert(RandomAi),
+        };
+    }
 }
 
 fn setup_camera(mut commands: Commands) {

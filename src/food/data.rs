@@ -21,8 +21,3 @@ impl Food {
 
 #[derive(Component)]
 pub struct Rottable;
-
-pub struct FoodConfig {
-    pub last_for_turns: u32, // The number of turns the food will last for
-    pub growth_amount: i32,  // Amount of growth gained for eating fresh food
-}

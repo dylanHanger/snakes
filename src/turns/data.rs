@@ -2,6 +2,8 @@ use std::time::Duration;
 
 use bevy::{core::Timer, prelude::StageLabel};
 
+use super::config::TurnConfig;
+
 #[derive(StageLabel, Debug, Hash, PartialEq, Eq, Clone, Copy)]
 pub enum TurnStage {
     PreTurn,
@@ -31,5 +33,10 @@ impl Turn {
         self.ready = false;
         self.requested = false;
         self.timer.reset();
+    }
+}
+impl From<TurnConfig> for Turn {
+    fn from(config: TurnConfig) -> Self {
+        Self::new(Duration::from_millis(config.turn_time), config.wait_for_all)
     }
 }

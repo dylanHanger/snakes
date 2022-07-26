@@ -6,36 +6,19 @@ use std::{
 
 use bevy::prelude::{Component, KeyCode};
 use crossbeam_channel::{unbounded, Receiver, Sender};
+use serde::Deserialize;
 
 use crate::movement::prelude::Direction;
 
 #[derive(Component)]
-pub struct RandomMoves;
+pub struct RandomAi;
 
-#[derive(Component)]
+#[derive(Component, Debug, Clone, Copy, Deserialize)]
 pub struct KeyboardInput {
     pub north: KeyCode,
     pub east: KeyCode,
     pub south: KeyCode,
     pub west: KeyCode,
-}
-impl KeyboardInput {
-    pub fn wasd() -> Self {
-        Self {
-            north: KeyCode::W,
-            east: KeyCode::D,
-            south: KeyCode::S,
-            west: KeyCode::A,
-        }
-    }
-    pub fn arrows() -> Self {
-        Self {
-            north: KeyCode::Up,
-            east: KeyCode::Right,
-            south: KeyCode::Down,
-            west: KeyCode::Left,
-        }
-    }
 }
 
 #[derive(Component)]
@@ -103,7 +86,8 @@ impl CustomAi {
     }
 }
 
-#[derive(Component, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Component, PartialEq, Eq, PartialOrd, Ord, Debug, Clone, Copy, Deserialize)]
+#[serde(rename_all = "lowercase")]
 pub enum BuiltinAi {
     Easy,
     Medium,

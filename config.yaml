@@ -1,0 +1,43 @@
+---
+width: 32
+height: 32
+
+turns: 1500
+timeout: 25
+wait: false
+
+respawn: 10
+
+food:
+  value: 5
+  lifetime: 50
+
+snakes:
+  - Human:
+      type: keyboard
+      keys:
+        north: W
+        west: A
+        south: S
+        east: D
+
+  - Monty:
+      type: custom
+      executable: python
+      args:
+        - monty.py
+
+  - Randy:
+      type: random
+
+  - Easy:
+      type: builtin
+      difficulty: easy
+
+  - Medium:
+      type: builtin
+      difficulty: medium
+
+  - Hard:
+      type: builtin
+      difficulty: hard

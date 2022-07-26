@@ -6,29 +6,9 @@ use bevy::{
 use crate::{
     collisions::prelude::Collidable,
     grid::prelude::{GridPosition, GridScale},
-    input::prelude::{BuiltinAi, KeyboardInput},
     movement::prelude::Direction,
     Actor,
 };
-
-pub enum SnakeType {
-    Custom {
-        executable: String,
-        args: Vec<String>,
-    },
-    Builtin {
-        difficulty: BuiltinAi,
-    },
-    Keyboard {
-        keys: KeyboardInput,
-    },
-    Random,
-}
-pub struct SnakeConfig {
-    pub name: String,
-    pub snake_type: SnakeType,
-}
-
 #[derive(Component)]
 pub struct Snake {
     pub length: u32,

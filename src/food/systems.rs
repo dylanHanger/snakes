@@ -11,7 +11,10 @@ use crate::{
     ProcessedEntities,
 };
 
-use super::data::{Food, FoodConfig, Rottable};
+use super::{
+    config::FoodConfig,
+    data::{Food, Rottable},
+};
 
 pub fn can_spawn_food(food: Query<&GridPosition, With<Food>>) -> bool {
     food.iter().count() == 0

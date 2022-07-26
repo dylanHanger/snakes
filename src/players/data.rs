@@ -75,7 +75,7 @@ impl Scoreboard {
         }
     }
 
-    pub fn insert_new(&mut self, player: Player) {
+    pub fn add_player(&mut self, player: Player) {
         if !self.scores.contains_key(&player) {
             self.scores.insert(player, Score::default());
         }

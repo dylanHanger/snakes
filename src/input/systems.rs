@@ -11,11 +11,11 @@ use crate::{
     Actor,
 };
 
-use super::data::{BuiltinAi, CustomAi, KeyboardInput, RandomMoves};
+use super::data::{BuiltinAi, CustomAi, KeyboardInput, RandomAi};
 
 pub fn random_moves_system(
     mut commands: Commands,
-    q: Query<Entity, (With<Actor>, With<RandomMoves>, Without<MoveIntent>)>,
+    q: Query<Entity, (With<Actor>, With<RandomAi>, Without<MoveIntent>)>,
 ) {
     let mut rng = rand::thread_rng();
 

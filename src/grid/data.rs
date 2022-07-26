@@ -2,6 +2,7 @@ use std::ops::{Index, IndexMut};
 
 use bevy::prelude::{Component, Deref, DerefMut, IVec2, Query, Vec2};
 use rand::Rng;
+use serde::Deserialize;
 
 use crate::movement::prelude::Direction;
 
@@ -27,7 +28,7 @@ impl GridScale {
     }
 }
 
-// The grid has a finite size
+#[derive(Debug, Deserialize)]
 pub struct GameGrid {
     pub width: usize,
     pub height: usize,
