@@ -160,6 +160,7 @@ impl Plugin for SnakesPlugin {
                     .label("rendering")
                     .with_system(scoreboard_system)
                     .with_system(color_players)
+                    .with_system(color_food)
                     .with_system(draw_grid_objects),
             );
     }
