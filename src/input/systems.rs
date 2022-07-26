@@ -111,7 +111,8 @@ pub fn external_update_system(
             } else {
                 agent.send("-1".to_string());
             }
-            agent.send(format!("{} {} {}", snake.length, position.x, position.y));
+            let length = 1 + snake.body.len();
+            agent.send(format!("{} {} {}", length, position.x, position.y));
             for &body_part in &snake.body {
                 if let Ok(position) = segments.get(body_part) {
                     agent.send(format!(" {} {}", position.x, position.y))
