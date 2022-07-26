@@ -11,7 +11,7 @@ Install Snakes! by cloning this repository and building with Cargo, or by downlo
   cd snakes
   cargo build --release
 ```
-    
+
 ## Run Locally
 
 Simply run `snakes[.exe]`, config is read from a file called `config.yaml`
@@ -85,7 +85,7 @@ snakes:
 	    west: <key for left>
 	    south: <key for down>
 	    east: <key for right>
-	    
+
   # A snake with a built in AI
   - <Snake name>:
       type: builtin
