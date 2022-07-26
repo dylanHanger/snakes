@@ -23,7 +23,7 @@ use input::prelude::*;
 use iyes_loopless::prelude::ConditionSet;
 use movement::prelude::*;
 use players::prelude::{
-    color_players, display_scoreboard, scoreboard_system, Player, PlayerColors, Scoreboard,
+    color_players, scoreboard_system, Player, PlayerColors, Scoreboard,
 };
 use snakes::prelude::*;
 use turns::prelude::*;

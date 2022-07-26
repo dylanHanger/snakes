@@ -28,7 +28,3 @@ pub fn scoreboard_system(players: Query<(&Snake, &Player)>, mut scoreboard: ResM
         score.max_length = usize::max(score.max_length, score.current_length);
     }
 }
-
-pub fn display_scoreboard(scoreboard: Res<Scoreboard>) {
-    println!("{:?}", scoreboard)
-}
