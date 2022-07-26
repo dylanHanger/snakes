@@ -30,8 +30,7 @@ pub fn slither_system(
 
 pub fn limit_snake_moves(mut q: Query<(&Snake, &mut MoveIntent)>) {
     for (snake, mut intent) in q.iter_mut() {
-        let can_move = snake.body.is_empty() || intent.direction != snake.direction.opposite();
-        if !can_move {
+        if !snake.can_move(intent.direction) {
             intent.direction = snake.direction;
         }
     }

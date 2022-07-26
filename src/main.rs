@@ -20,11 +20,9 @@ use death::prelude::*;
 use food::prelude::*;
 use grid::prelude::*;
 use input::prelude::*;
-use iyes_loopless::prelude::ConditionSet;
+use iyes_loopless::{condition::IntoConditionalExclusiveSystem, prelude::ConditionSet};
 use movement::prelude::*;
-use players::prelude::{
-    color_players, scoreboard_system, Player, PlayerColors, Scoreboard,
-};
+use players::prelude::{color_players, scoreboard_system, Player, PlayerColors, Scoreboard};
 use snakes::prelude::*;
 use turns::prelude::*;
 
@@ -36,7 +34,7 @@ impl Plugin for SnakesPlugin {
     fn build(&self, app: &mut App) {
         app.add_plugins(DefaultPlugins)
             .insert_resource(GameGrid::new(32, 32))
-            .insert_resource(Turn::new(Duration::from_millis(50), false))
+            .insert_resource(Turn::new(Duration::from_millis(0), true))
             .insert_resource(PlayerColors::default())
             .insert_resource(Scoreboard::new())
             .add_stage_after(
@@ -94,10 +92,19 @@ impl Plugin for SnakesPlugin {
             )
             .add_system_set_to_stage(
                 TurnStage::Request,
+                ConditionSet::new()
+                    .label("input")
+                    .before("request")
+                    .run_if_not(turn_requested)
+                    .with_system(ai_moves_system)
+                    .with_system(random_moves_system)
+                    .into(),
+            )
+            .add_system_set_to_stage(
+                TurnStage::Request,
                 SystemSet::new()
                     .label("input")
                     .with_system(external_moves_system)
-                    .with_system(random_moves_system)
                     .with_system(keyboard_moves_system),
             )
             .add_system_set_to_stage(
@@ -171,17 +178,20 @@ fn setup(mut commands: Commands, mut scoreboard: ResMut<Scoreboard>) {
         .spawn()
         .insert(Player { id: 0 })
         .insert(Respawning { time: 0 })
-        .insert(KeyboardMoves::wasd());
+        .insert(AiMoves::Easy);
     scoreboard.insert_new(Player { id: 0 });
     commands
         .spawn()
         .insert(Player { id: 1 })
         .insert(Respawning { time: 0 })
-        .insert(ExternalMoves::new(
-            "python".to_string(),
-            vec!["monty.py".to_string()],
-        ));
+        .insert(AiMoves::Medium);
     scoreboard.insert_new(Player { id: 1 });
+    commands
+        .spawn()
+        .insert(Player { id: 2 })
+        .insert(Respawning { time: 0 })
+        .insert(AiMoves::Hard);
+    scoreboard.insert_new(Player { id: 2 });
 }
 
 fn setup_camera(mut commands: Commands) {

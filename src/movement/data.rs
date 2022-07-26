@@ -32,6 +32,15 @@ impl Direction {
             Direction::West => Direction::East,
         }
     }
+
+    pub fn cardinals() -> [Direction; 4] {
+        [
+            Direction::North,
+            Direction::East,
+            Direction::South,
+            Direction::West,
+        ]
+    }
 }
 impl FromStr for Direction {
     type Err = ();

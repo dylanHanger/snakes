@@ -26,6 +26,10 @@ impl Snake {
             direction: Direction::North,
         }
     }
+
+    pub fn can_move(&self, direction: Direction) -> bool {
+        self.body.is_empty() || direction != self.direction.opposite()
+    }
 }
 
 #[derive(Bundle)]

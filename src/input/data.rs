@@ -61,8 +61,6 @@ impl ExternalMoves {
                     let msg = buf.trim().to_string();
                     if let Err(e) = sender.send(msg) {
                         panic!("{:?}", e);
-                    } else {
-                        eprintln!("Received: '{}'", buf.trim());
                     }
                 }
             }
@@ -96,5 +94,12 @@ impl ExternalMoves {
 
     pub fn send(&self, msg: String) {
         self.sender.send(msg).unwrap_or_default();
-    }    
+    }
+}
+
+#[derive(Component, PartialEq, Eq, PartialOrd, Ord)]
+pub enum AiMoves {
+    Easy,
+    Medium,
+    Hard,
 }

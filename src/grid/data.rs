@@ -1,5 +1,9 @@
+use std::ops::{Index, IndexMut};
+
 use bevy::prelude::{Component, Deref, DerefMut, IVec2, Query, Vec2};
 use rand::Rng;
+
+use crate::movement::prelude::Direction;
 
 // Every object has a grid position and occupies one grid cell
 #[derive(Component, Deref, DerefMut, Clone, Copy, PartialEq, Eq)]
@@ -7,6 +11,10 @@ pub struct GridPosition(IVec2);
 impl GridPosition {
     pub fn new(x: i32, y: i32) -> Self {
         Self(IVec2::new(x, y))
+    }
+
+    pub fn step(&self, direction: Direction) -> GridPosition {
+        Self::new(self.x + direction.delta_x(), self.y + direction.delta_y())
     }
 }
 
@@ -21,12 +29,15 @@ impl GridScale {
 
 // The grid has a finite size
 pub struct GameGrid {
-    pub width: u32,
-    pub height: u32,
+    pub width: usize,
+    pub height: usize,
 }
 impl GameGrid {
     pub fn new(width: u32, height: u32) -> Self {
-        Self { width, height }
+        Self {
+            width: width as usize,
+            height: height as usize,
+        }
     }
 
     pub fn contains_position(&self, position: &GridPosition) -> bool {
@@ -48,6 +59,48 @@ impl GameGrid {
                 }
             }
             break 'outer p;
+        }
+    }
+}
+
+#[derive(Clone, Copy, PartialEq)]
+pub enum CellType {
+    Empty,
+    Food { value: f32 },
+    Snake { id: Option<u32> },
+}
+#[derive(Deref)]
+pub struct Map(Vec<Vec<CellType>>);
+impl Map {
+    pub fn new(grid: &GameGrid) -> Self {
+        Self(vec![vec![CellType::Empty; grid.width]; grid.height])
+    }
+}
+impl Index<GridPosition> for Map {
+    type Output = CellType;
+
+    fn index(&self, index: GridPosition) -> &Self::Output {
+        if index.x < 0
+            || index.x > self.0[1].len() as i32
+            || index.y < 0
+            || index.y > self.len() as i32
+        {
+            panic!("Grid position out of bounds");
+        } else {
+            &self.0[index.y as usize][index.x as usize]
+        }
+    }
+}
+impl IndexMut<GridPosition> for Map {
+    fn index_mut(&mut self, index: GridPosition) -> &mut Self::Output {
+        if index.x < 0
+            || index.x > self.0[1].len() as i32
+            || index.y < 0
+            || index.y > self.len() as i32
+        {
+            panic!("Grid position out of bounds");
+        } else {
+            &mut self.0[index.y as usize][index.x as usize]
         }
     }
 }
