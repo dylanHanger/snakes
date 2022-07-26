@@ -54,6 +54,9 @@ impl Plugin for SnakesPlugin {
             .insert_resource(PlayerColors::default())
             .insert_resource(Scoreboard::new())
             .insert_resource(ProcessedEntities::new())
+            .insert_resource(DeathConfig {
+                respawn_time: 10
+            })
             .insert_resource(FoodConfig {
                 last_for_turns: 75,
                 growth_amount: 5,

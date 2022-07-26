@@ -11,3 +11,7 @@ pub struct DeathEvent {
 pub struct Respawning {
     pub time: u32,
 }
+
+pub struct DeathConfig {
+    pub respawn_time: u32,
+}

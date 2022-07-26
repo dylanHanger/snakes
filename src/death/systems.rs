@@ -14,6 +14,7 @@ pub fn death_system(
     mut deaths: EventReader<DeathEvent>,
     players: Query<&Player>,
     mut scoreboard: ResMut<Scoreboard>,
+    death_config: Res<DeathConfig>
 ) {
     for &DeathEvent { target, culprit } in deaths.iter() {
         if let Ok(mut snake) = snakes.get_mut(target) {
@@ -23,7 +24,7 @@ pub fn death_system(
             commands
                 .entity(target)
                 .remove_bundle::<SnakeBundle>()
-                .insert(Respawning { time: 5 });
+                .insert(Respawning { time: death_config.respawn_time });
 
             // Update scores
             if let Ok(&player) = players.get(target) {
