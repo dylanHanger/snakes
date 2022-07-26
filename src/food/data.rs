@@ -7,7 +7,7 @@ pub struct Food {
 }
 impl Food {
     pub fn new(last_for_turns: u32) -> Self {
-        let initial_value = (last_for_turns as f32 / 10.0);
+        let initial_value = last_for_turns as f32 / 10.0;
         Self {
             initial_value,
             value: initial_value,
@@ -21,3 +21,8 @@ impl Food {
 
 #[derive(Component)]
 pub struct Rottable;
+
+pub struct FoodConfig {
+    pub last_for_turns: u32, // The number of turns the food will last for
+    pub growth_amount: i32,  // Amount of growth gained for eating fresh food
+}

@@ -11,7 +11,7 @@ use crate::{
     ProcessedEntities,
 };
 
-use super::data::{Food, Rottable};
+use super::data::{Food, FoodConfig, Rottable};
 
 pub fn can_spawn_food(food: Query<&GridPosition, With<Food>>) -> bool {
     food.iter().count() == 0
@@ -21,6 +21,7 @@ pub fn spawn_food_system(
     mut commands: Commands,
     occupied: Query<&GridPosition>,
     grid: Res<GameGrid>,
+    food_config: Res<FoodConfig>,
 ) {
     let position = grid.get_unoccupied_position(&occupied);
     commands
@@ -34,7 +35,7 @@ pub fn spawn_food_system(
         .insert(position)
         .insert(GridScale::square(0.5))
         .insert(Rottable)
-        .insert(Food::new(75));
+        .insert(Food::new(food_config.last_for_turns));
 }
 
 pub fn eat_food_system(
@@ -43,11 +44,12 @@ pub fn eat_food_system(
     food: Query<(Entity, &Food, &GridPosition)>,
     mut processed_entities: ResMut<ProcessedEntities>,
     mut deaths: EventWriter<DeathEvent>,
+    food_config: Res<FoodConfig>,
 ) {
     for (snake_ent, mut snake, snake_pos) in snakes.iter_mut() {
         for (food_ent, food, food_pos) in food.iter() {
             if snake_pos == food_pos {
-                let growth = (5. * food.get_factor()).round() as i32;
+                let growth = (food_config.growth_amount as f32 * food.get_factor()).round() as i32;
                 if growth < 0 {
                     let shrinkage = growth.unsigned_abs();
                     if let Some(new_length) = snake.length.checked_sub(shrinkage) {
@@ -97,7 +99,7 @@ pub fn color_food(mut foods: Query<(&mut Sprite, &mut GridScale, &Food)>) {
         let color = lerp(Color::GREEN, Color::RED, alpha);
         sprite.color = color;
 
-        let size = lerp(0.7, 0.4, alpha);
+        let size = lerp(0.6, 0.3, alpha);
         scale.x = size;
         scale.y = size;
     }
