@@ -4,11 +4,11 @@ use bevy::prelude::{
     default, Color, Commands, Entity, EventWriter, Query, Res, ResMut, Sprite, SpriteBundle, With,
 };
 
-use crate::{
+use crate::game::{
     death::prelude::DeathEvent,
     grid::prelude::{GameGrid, GridPosition, GridScale},
     snakes::prelude::Snake,
-    ProcessedEntities,
+    DespawnedFoods,
 };
 
 use super::{
@@ -45,7 +45,7 @@ pub fn eat_food_system(
     mut commands: Commands,
     mut snakes: Query<(Entity, &mut Snake, &GridPosition)>,
     food: Query<(Entity, &Food, &GridPosition)>,
-    mut processed_entities: ResMut<ProcessedEntities>,
+    mut processed_entities: ResMut<DespawnedFoods>,
     mut deaths: EventWriter<DeathEvent>,
     food_config: Res<FoodConfig>,
 ) {
@@ -79,7 +79,7 @@ pub fn eat_food_system(
 pub fn rotting_system(
     mut commands: Commands,
     mut rottable_foods: Query<(Entity, &mut Food), With<Rottable>>,
-    mut processed_entities: ResMut<ProcessedEntities>,
+    mut processed_entities: ResMut<DespawnedFoods>,
 ) {
     for (e, mut food) in rottable_foods.iter_mut() {
         food.value -= 0.1;

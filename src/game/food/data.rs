@@ -1,4 +1,7 @@
-use bevy::prelude::Component;
+use bevy::{
+    prelude::{Component, Deref, DerefMut, Entity},
+    utils::HashSet,
+};
 
 #[derive(Component)]
 pub struct Food {
@@ -21,3 +24,16 @@ impl Food {
 
 #[derive(Component)]
 pub struct Rottable;
+
+#[derive(Deref, DerefMut)]
+pub struct DespawnedFoods(HashSet<Entity>);
+impl DespawnedFoods {
+    pub fn new() -> Self {
+        Self(HashSet::new())
+    }
+}
+impl Default for DespawnedFoods {
+    fn default() -> Self {
+        Self::new()
+    }
+}

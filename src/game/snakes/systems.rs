@@ -1,6 +1,8 @@
 use bevy::prelude::{Commands, Entity, Query, Without};
 
-use crate::{grid::prelude::GridPosition, movement::prelude::MoveIntent, players::prelude::Player};
+use crate::game::{
+    grid::prelude::GridPosition, movement::prelude::MoveIntent, players::prelude::Player,
+};
 
 use super::data::{SegmentBundle, Snake};
 

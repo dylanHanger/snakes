@@ -1,6 +1,6 @@
 use serde::Deserialize;
 
-use crate::input::prelude::{BuiltinAi, KeyboardInput};
+use crate::game::input::prelude::{BuiltinAi, KeyboardInput};
 
 #[derive(Debug, Deserialize, Clone)]
 #[serde(tag = "type", rename_all = "lowercase")]

@@ -4,7 +4,7 @@ use bevy::prelude::{Component, Deref, DerefMut, IVec2, Query, Vec2};
 use rand::Rng;
 use serde::Deserialize;
 
-use crate::movement::prelude::Direction;
+use crate::game::movement::prelude::Direction;
 
 // Every object has a grid position and occupies one grid cell
 #[derive(Component, Deref, DerefMut, Clone, Copy, PartialEq, Eq)]

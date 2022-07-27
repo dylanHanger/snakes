@@ -1,6 +1,6 @@
 use bevy::prelude::{Component, Entity};
 
-use crate::players::prelude::Player;
+use crate::game::players::prelude::Player;
 
 pub struct DeathEvent {
     pub target: Entity,
@@ -10,4 +10,9 @@ pub struct DeathEvent {
 #[derive(Component)]
 pub struct Respawning {
     pub time: u32,
+}
+impl Respawning {
+    pub fn now() -> Self {
+        Self { time: 0 }
+    }
 }

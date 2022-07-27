@@ -1,6 +1,6 @@
 use bevy::prelude::{Query, Res, ResMut, Time, With};
 
-use crate::{movement::prelude::MoveIntent, Actor};
+use crate::game::{movement::prelude::MoveIntent, Actor};
 
 use super::data::*;
 

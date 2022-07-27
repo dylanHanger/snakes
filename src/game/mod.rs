@@ -1,0 +1,276 @@
+pub mod collisions;
+pub mod death;
+pub mod food;
+pub mod grid;
+pub mod input;
+pub mod movement;
+pub mod players;
+pub mod snakes;
+pub mod turns;
+
+pub mod prelude {}
+
+use std::path::PathBuf;
+
+use bevy::prelude::{
+    App, Commands, Component, CoreStage, DefaultPlugins, IntoChainSystem, OrthographicCameraBundle,
+    Plugin, StartupStage, SystemSet, SystemStage,
+};
+use iyes_loopless::prelude::ConditionSet;
+
+use collisions::prelude::*;
+use death::prelude::*;
+use food::prelude::*;
+use grid::prelude::*;
+use input::prelude::*;
+use movement::prelude::*;
+use players::prelude::*;
+use snakes::prelude::*;
+use turns::prelude::*;
+
+use crate::config::read_config_from_file;
+
+use self::{
+    death::config::DeathConfig, food::config::FoodConfig, players::config::PlayerConfig,
+    turns::config::TurnConfig,
+};
+
+#[derive(Component)]
+pub struct Actor;
+pub struct SnakesPlugin {
+    pub config_file: PathBuf,
+}
+impl Plugin for SnakesPlugin {
+    fn build(&self, app: &mut App) {
+        let config = read_config_from_file(&self.config_file).unwrap_or_else(|e| {
+            panic!(
+                "Failed to read config file {}: {:?}",
+                self.config_file.display(),
+                e
+            )
+        });
+
+        app.add_plugins(DefaultPlugins);
+
+        // Add stages for more fine grained control over when entities are added or removed
+        add_stages(app);
+
+        // Let the world know the size of the arena
+        app.insert_resource(config.grid);
+
+        // Add core gameplay mechanics
+        add_players(app, config.players);
+        add_death(app, config.death);
+        add_turns(app, config.turns);
+        add_food(app, config.food);
+        add_simulation(app);
+        add_input(app);
+
+        // Add everything related to displaying the game
+        add_rendering(app);
+
+        // Add a cleanup system to prevent zombie processes
+        app.add_system_set_to_stage(
+            CoreStage::PostUpdate,
+            ConditionSet::new()
+                .run_if(turn_ready)
+                .run_if(turns_finished)
+                .with_system(kill_external_agents)
+                .into(),
+        );
+    }
+}
+
+fn add_stages(app: &mut App) {
+    app.add_stage_after(
+        CoreStage::Update,
+        TurnStage::PreTurn,
+        SystemStage::parallel(),
+    )
+    .add_stage_after(
+        TurnStage::PreTurn,
+        TurnStage::Request,
+        SystemStage::parallel(),
+    )
+    .add_stage_after(
+        TurnStage::Request,
+        TurnStage::PostRequest,
+        SystemStage::parallel(),
+    )
+    .add_stage_after(
+        TurnStage::PostRequest,
+        TurnStage::Simulate,
+        SystemStage::parallel(),
+    )
+    .add_stage_after(
+        TurnStage::Simulate,
+        TurnStage::PostSimulate,
+        SystemStage::parallel(),
+    );
+}
+
+fn add_rendering(app: &mut App) {
+    app.insert_resource(PlayerColors::default())
+        .add_startup_system(setup_camera)
+        .add_system_set_to_stage(
+            CoreStage::PostUpdate,
+            SystemSet::new()
+                .label("rendering")
+                .with_system(color_players)
+                .with_system(color_food)
+                .with_system(draw_grid_objects),
+        );
+}
+
+fn add_players(app: &mut App, player_configs: Vec<PlayerConfig>) {
+    app.insert_resource(player_configs)
+        .insert_resource(Scoreboard::new())
+        .add_startup_system_set(
+            SystemSet::new()
+                .label("setup")
+                // Create the players and set them to spawn immediately
+                .with_system(setup_players)
+                // Setup the scoreboard with empty scores for each player
+                .with_system(setup_scoreboard),
+        )
+        .add_system_to_stage(CoreStage::PostUpdate, scoreboard_system);
+}
+
+fn add_turns(app: &mut App, turn_config: TurnConfig) {
+    app.insert_resource(Turn::from(turn_config))
+        .add_system_set_to_stage(
+            CoreStage::PreUpdate,
+            ConditionSet::new()
+                .label("wait")
+                .run_if_not(turns_finished)
+                // Increment the turn timer
+                .with_system(turn_timer_system)
+                // Check if the turn is ready to be simulated
+                .with_system(turn_ready_system)
+                .into(),
+        )
+        .add_system_set_to_stage(
+            TurnStage::Request,
+            ConditionSet::new()
+                .label("request")
+                .run_if_not(turn_requested)
+                // Mark the turn as requested
+                .with_system(request_turn_system)
+                .into(),
+        )
+        .add_system_set_to_stage(
+            CoreStage::PostUpdate,
+            ConditionSet::new()
+                .label("end")
+                .run_if(turn_ready)
+                .with_system(end_turn_system)
+                .into(),
+        );
+}
+
+fn add_food(app: &mut App, food_config: FoodConfig) {
+    app.insert_resource(DespawnedFoods::new())
+        .insert_resource(food_config)
+        .add_system_set_to_stage(
+            TurnStage::PreTurn,
+            ConditionSet::new()
+                .label("spawn food")
+                .run_if_not(turn_requested)
+                .run_if(can_spawn_food)
+                .with_system(spawn_food_system)
+                .into(),
+        )
+        .add_system_set_to_stage(
+            TurnStage::PostSimulate,
+            ConditionSet::new()
+                .after("collisions")
+                .run_if(turn_ready)
+                .with_system(rotting_system)
+                .into(),
+        );
+}
+
+fn add_simulation(app: &mut App) {
+    app.add_system_set_to_stage(
+        TurnStage::Simulate,
+        ConditionSet::new()
+            .label("simulate")
+            .run_if(turn_ready)
+            .with_system(slither_system.chain(movement_system))
+            .into(),
+    )
+    .add_system_set_to_stage(
+        TurnStage::PostSimulate,
+        SystemSet::new()
+            .label("collisions")
+            .with_system(collision_system)
+            .with_system(eat_food_system),
+    );
+}
+
+fn add_death(app: &mut App, death_config: DeathConfig) {
+    app.add_event::<DeathEvent>()
+        .insert_resource(death_config)
+        .add_system_set_to_stage(
+            TurnStage::PostSimulate,
+            SystemSet::new()
+                .label("deaths")
+                .after("collisions")
+                .with_system(death_system),
+        )
+        .add_system_set_to_stage(
+            TurnStage::PostSimulate,
+            ConditionSet::new()
+                .label("respawn")
+                .after("deaths")
+                .run_if(turn_ready)
+                .with_system(respawn_system)
+                .into(),
+        );
+}
+
+fn add_input(app: &mut App) {
+    app.add_startup_system_to_stage(
+        StartupStage::PostStartup,
+        // Send the initialization input to the external agents
+        init_external_agents,
+    )
+    .add_system_set_to_stage(
+        TurnStage::Request,
+        ConditionSet::new()
+            .label("input")
+            .before("request")
+            .run_if_not(turn_requested)
+            // Compute move for AI agents
+            .with_system(ai_moves_system)
+            // Choose a random move
+            .with_system(random_moves_system)
+            // Send out the input to the external agents so they can begin computing a move
+            .with_system(external_update_system)
+            .into(),
+    )
+    .add_system_set_to_stage(
+        TurnStage::Request,
+        SystemSet::new()
+            .label("input")
+            // Read input from the external agents
+            .with_system(external_moves_system)
+            // Read input from the keyboard
+            .with_system(keyboard_moves_system),
+    )
+    .add_system_set_to_stage(
+        TurnStage::PostRequest,
+        ConditionSet::new()
+            .label("fix input")
+            .run_if(turn_ready)
+            // Make sure snakes don't try to make illegal moves
+            .with_system(limit_snake_moves)
+            // Make sure snakes have a default move if they don't have one
+            .with_system(default_snake_moves)
+            .into(),
+    );
+}
+
+fn setup_camera(mut commands: Commands) {
+    commands.spawn_bundle(OrthographicCameraBundle::new_2d());
+}

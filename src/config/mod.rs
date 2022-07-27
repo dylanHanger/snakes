@@ -9,7 +9,7 @@ use std::{
 use bevy::utils::HashMap;
 use serde::{Deserialize, Deserializer};
 
-use crate::{
+use crate::game::{
     death::config::DeathConfig,
     food::config::FoodConfig,
     grid::prelude::GameGrid,
@@ -22,7 +22,7 @@ pub use cli::*;
 #[derive(Debug)]
 pub enum ConfigError {
     IOError(io::Error),
-    SerdeError(serde_yaml::Error),
+    ParseError(serde_yaml::Error),
 }
 impl From<io::Error> for ConfigError {
     fn from(error: io::Error) -> Self {
@@ -31,7 +31,7 @@ impl From<io::Error> for ConfigError {
 }
 impl From<serde_yaml::Error> for ConfigError {
     fn from(error: serde_yaml::Error) -> Self {
-        ConfigError::SerdeError(error)
+        ConfigError::ParseError(error)
     }
 }
 

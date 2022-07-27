@@ -3,7 +3,7 @@ use bevy::{
     sprite::SpriteBundle,
 };
 
-use crate::{
+use crate::game::{
     collisions::prelude::Collidable,
     grid::prelude::{GridPosition, GridScale},
     movement::prelude::Direction,

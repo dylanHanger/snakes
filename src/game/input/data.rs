@@ -10,7 +10,7 @@ use crossbeam_channel::{unbounded, Receiver, Sender};
 use serde::Deserialize;
 use wait_timeout::ChildExt;
 
-use crate::movement::prelude::Direction;
+use crate::game::movement::prelude::Direction;
 
 #[derive(Component)]
 pub struct RandomAi;

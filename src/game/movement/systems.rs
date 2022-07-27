@@ -1,5 +1,5 @@
 use super::data::*;
-use crate::grid::prelude::*;
+use crate::game::grid::prelude::*;
 
 use bevy::prelude::{Commands, Entity, Query};
 

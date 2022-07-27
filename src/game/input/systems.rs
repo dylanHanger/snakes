@@ -1,7 +1,7 @@
 use bevy::prelude::{Commands, Entity, Input, KeyCode, Query, Res, ResMut, With, Without};
 use rand::Rng;
 
-use crate::{
+use crate::game::{
     food::prelude::Food,
     grid::prelude::{CellType, GameGrid, GridPosition, Map},
     movement::prelude::{Direction, MoveIntent},
@@ -83,15 +83,16 @@ pub fn init_external_agents(agents: Query<(&CustomAi, &Player)>, grid: Res<GameG
     }
 }
 
+pub fn request_turn_system(mut turn: ResMut<Turn>) {
+    turn.requested = true;
+}
+
 pub fn external_update_system(
-    mut turn: ResMut<Turn>,
     agents: Query<&CustomAi, With<Actor>>,
     snakes: Query<(&GridPosition, &Snake, Option<&Player>)>,
     segments: Query<&GridPosition, With<SnakeSegment>>,
     food: Query<&GridPosition, With<Food>>,
 ) {
-    turn.requested = true;
-
     let mut sorted_snakes = snakes
         .iter()
         .collect::<Vec<(&GridPosition, &Snake, Option<&Player>)>>();

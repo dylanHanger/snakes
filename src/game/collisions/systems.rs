@@ -1,6 +1,6 @@
 use bevy::prelude::*;
 
-use crate::{
+use crate::game::{
     death::prelude::DeathEvent,
     grid::prelude::{GameGrid, GridPosition},
     players::prelude::Player,

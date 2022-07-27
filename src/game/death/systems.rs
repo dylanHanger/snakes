@@ -1,6 +1,6 @@
 use bevy::prelude::{Commands, Entity, EventReader, Query, Res, ResMut};
 
-use crate::{
+use crate::game::{
     grid::prelude::{GameGrid, GridPosition},
     players::prelude::{Player, Scoreboard},
     snakes::prelude::{Snake, SnakeBundle},
@@ -48,7 +48,7 @@ pub fn death_system(
     }
 }
 
-pub fn spawn_snakes_system(
+pub fn respawn_system(
     mut commands: Commands,
     mut q: Query<(Entity, &mut Respawning, Option<&Player>)>,
     occupied: Query<&GridPosition>,
