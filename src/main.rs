@@ -9,8 +9,6 @@ mod players;
 mod snakes;
 mod turns;
 
-use std::path::PathBuf;
-
 use bevy::{
     prelude::{
         default, App, ClearColor, Color, Commands, Component, CoreStage, DefaultPlugins, Deref,
@@ -19,8 +17,9 @@ use bevy::{
     },
     utils::HashSet,
 };
+use clap::Parser;
 use collisions::prelude::*;
-use config::read_config_from_file;
+use config::{read_config_from_file, Cli};
 use death::prelude::*;
 use food::prelude::*;
 use grid::prelude::*;
@@ -53,7 +52,14 @@ impl Default for ProcessedEntities {
 struct SnakesPlugin;
 impl Plugin for SnakesPlugin {
     fn build(&self, app: &mut App) {
-        let config = read_config_from_file(&PathBuf::from("config.yaml")).unwrap_or_default();
+        let cli = Cli::parse();
+        let config = read_config_from_file(&cli.config).unwrap_or_else(|e| {
+            panic!(
+                "Failed to read config file {}: {:?}",
+                cli.config.display(),
+                e
+            )
+        });
 
         app.add_plugins(DefaultPlugins)
             .insert_resource(config.grid)

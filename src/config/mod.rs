@@ -1,3 +1,5 @@
+mod cli;
+
 use std::{
     fs::File,
     io::{self, BufReader},
@@ -14,6 +16,8 @@ use crate::{
     players::config::{PlayerConfig, PlayerType},
     turns::config::TurnConfig,
 };
+
+pub use cli::*;
 
 #[derive(Debug)]
 pub enum ConfigError {
