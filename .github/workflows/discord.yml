@@ -2,7 +2,7 @@ name: Discord
 
 on:
   release:
-    types: [created]
+    types: [published]
 
 jobs:
   notify:

@@ -200,6 +200,13 @@ impl Plugin for SnakesPlugin {
             )
             .add_system_set_to_stage(
                 CoreStage::PostUpdate,
+                ConditionSet::new()
+                    .run_if(turns_finished)
+                    .with_system(kill_external_agents)
+                    .into(),
+            )
+            .add_system_set_to_stage(
+                CoreStage::PostUpdate,
                 SystemSet::new()
                     .label("rendering")
                     .with_system(scoreboard_system)

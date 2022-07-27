@@ -66,6 +66,12 @@ pub fn external_moves_system(
     }
 }
 
+pub fn kill_external_agents(mut commands: Commands, agents: Query<Entity, With<CustomAi>>) {
+    for e in agents.iter() {
+        commands.entity(e).remove::<CustomAi>();
+    }
+}
+
 pub fn init_external_agents(agents: Query<(&CustomAi, &Player)>, grid: Res<GameGrid>) {
     for (agent, player) in agents.iter() {
         println!("Starting game");

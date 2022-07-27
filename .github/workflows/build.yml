@@ -102,4 +102,4 @@ jobs:
             target/${{ matrix.job.target }}/release/snakes-*.tar.gz
             target/${{ matrix.job.target }}/release/snakes-*.sha256
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.PAT }}
