@@ -3,6 +3,7 @@ use serde::Deserialize;
 #[derive(Debug, Deserialize)]
 #[serde(default)]
 pub struct DeathConfig {
+    #[serde(rename = "respawn")]
     pub respawn_time: u32,
 }
 impl Default for DeathConfig {

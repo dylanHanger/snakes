@@ -63,6 +63,11 @@ impl GameGrid {
         }
     }
 }
+impl Default for GameGrid {
+    fn default() -> Self {
+        Self::new(32, 32)
+    }
+}
 
 #[derive(Clone, Copy, PartialEq)]
 pub enum CellType {

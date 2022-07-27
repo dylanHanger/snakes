@@ -21,8 +21,6 @@ pub fn read_config_from_file(path: &PathBuf) -> GameConfig {
     }
 }
 
-// TODO: I can definitely improve this
-//          - Only the snakes need the custom logic, I can #derive for the rest
 #[derive(Debug)]
 pub struct GameConfig {
     pub grid: GameGrid,
@@ -37,76 +35,42 @@ impl<'de> Deserialize<'de> for GameConfig {
     where
         D: Deserializer<'de>,
     {
-        #[derive(Debug, Deserialize)]
-        struct SnakeWrapper {
-            #[serde(flatten)]
-            snake_type: PlayerType,
-        }
-
-        #[derive(Debug, Deserialize)]
+        #[derive(Debug, Default, Deserialize)]
         #[serde(default)]
         struct Mapping {
-            width: u32,
-            height: u32,
+            #[serde(flatten)]
+            grid: GameGrid,
 
-            timeout: u64,
-            turns: u64,
-            wait: bool,
+            #[serde(flatten)]
+            turns: TurnConfig,
 
-            respawn: u32,
+            #[serde(flatten)]
+            death: DeathConfig,
 
             food: FoodConfig,
 
-            snakes: Vec<HashMap<String, SnakeWrapper>>,
-        }
-        impl Default for Mapping {
-            fn default() -> Self {
-                Self {
-                    width: 32,
-                    height: 32,
-                    timeout: 100,
-                    turns: 1500,
-                    wait: false,
-                    respawn: 10,
-                    food: Default::default(),
-                    snakes: vec![],
-                }
-            }
+            players: Vec<HashMap<String, PlayerType>>,
         }
 
         let Mapping {
-            width,
-            height,
-            timeout,
+            grid,
             turns,
-            wait,
-            respawn,
+            death,
             food,
-            snakes,
+            players,
         } = Mapping::deserialize(deserializer)?;
 
         Ok(Self {
-            grid: GameGrid::new(width, height),
-            death: DeathConfig {
-                respawn_time: respawn,
-            },
-            turns: TurnConfig {
-                turn_time: timeout,
-                wait_for_all: wait,
-                max_turns: turns,
-            },
-
+            grid,
+            death,
+            turns,
             food,
 
-            players: snakes
+            players: players
                 .iter()
                 .map(|m| {
-                    let name = m.keys().next().unwrap_or(&"Snake".to_string()).clone();
-                    let wrapper = m.values().next().unwrap_or(&SnakeWrapper {
-                        snake_type: PlayerType::Random,
-                    });
-
-                    PlayerConfig::new(name, wrapper.snake_type.clone())
+                    let (name, player_type) = m.iter().next().unwrap();
+                    PlayerConfig::new(name.to_string(), player_type.clone())
                 })
                 .collect(),
         })

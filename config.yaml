@@ -12,7 +12,7 @@ food:
   value: 5
   lifetime: 50
 
-snakes:
+players:
   - Human:
       type: keyboard
       keys:
