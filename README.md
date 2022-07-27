@@ -4,7 +4,7 @@
 
 ## Installation
 
-Install Snakes! by cloning this repository and building with Cargo, or by downloading a release
+Install Snakes! by cloning this repository and building with Cargo, or by downloading a [release](https://github.com/dylanHanger/snakes/releases)
 
 ```bash
   git clone https://github.com/dylanHanger/snakes
@@ -14,7 +14,16 @@ Install Snakes! by cloning this repository and building with Cargo, or by downlo
 
 ## Run Locally
 
-Simply run `snakes[.exe]`, config is read from a file called `config.yaml`
+Simply install and run `snakes[.exe]`
+```
+USAGE:
+    snakes[.exe] [OPTIONS]
+
+OPTIONS:
+    -c, --config <FILE>    The file to read game settings from [default: config.yaml]
+    -h, --help             Print help information
+    -V, --version          Print version information
+```
 
 ## Gameplay
 
@@ -66,7 +75,7 @@ food:
   value: <growth value of a fresh apple>
   lifetime: <number of turns the apple lasts>
 
-snakes:
+players:
   # A custom snake AI
   - <Snake name>:
       type: custom
@@ -124,12 +133,12 @@ If a snake is dead, it will not be included in the update.
 You then have some `timeout` (default: 250) milliseconds to compute your move. When it is ready, print it to standard out.
 
 #### Possible Moves
-| **Direction** | **Output** | **Description** |
-|--|--| -- |
-| North | `0` \| `north` \| `n` | Turn **upwards** |
-| East | `1` \| `east` \| `e` | Turn **right** |
-| South | `2` \| `south` \| `s` | Turn **downwards** |
-| West | `3` \| `west` \| `w` | Turn **left** |
+| **Direction** | **Output**            | **Description**    |
+| ------------- | --------------------- | ------------------ |
+| North         | `0` \| `north` \| `n` | Turn **upwards**   |
+| East          | `1` \| `east` \| `e`  | Turn **right**     |
+| South         | `2` \| `south` \| `s` | Turn **downwards** |
+| West          | `3` \| `west` \| `w`  | Turn **left**      |
 
 Snakes cannot turn in the direction opposite to their current direction. For example, if you are moving North, an output of `2` (*South*) will be ignored.
 If you do not output a move in time, your snake will simply move forwards.
@@ -162,14 +171,14 @@ while True:
             print(f"Snake {id} is {length} long", file=sys.stderr)
 
         # Output a random move
-        print(random.randint(1, 4))
+        print(random.randint(0, 3))
 
     except(EOFError):
         # If the game closes, we need to exit gracefully
         exit()
 ```
 
-And here is an example `config.yaml`
+And here is an example `example.yaml`
 ```yaml
 ---
 width: 32
@@ -185,7 +194,7 @@ food:
   value: 5
   lifetime: 50
 
-snakes:
+players:
   - Monty:
       type: custom
       executable: python
@@ -207,18 +216,25 @@ snakes:
       type: builtin
       difficulty: hard
 ```
-This can then be run with the command `./snakes[.exe]`
+This can then be run with the command `./snakes[.exe] --config example.yaml`
 
 ## FAQ
 
 #### How can I debug my snake?
-If you are using Visual Studio Code, you can attach the debugger to your code after it has been launched by the game. Set `wait: true`  in `config.yaml` to make sure the game waits for your snake if you hit any breakpoints.
+If you are using Visual Studio Code, you can attach the debugger to your code after it has been launched by the game. Set
+```yaml
+wait: true
+```
+ in `config.yaml` to make sure the game waits for your snake if you hit any breakpoints.
 
 #### Can I cheat?
 Anything you can manage to do is a valid strategy, but I reserve the right to patch out any unintended exploits.
 
 #### What language should I code my snake in?
 Anything you want, as long as you can launch it as an executable that uses stdio.
+
+#### Isn't a whole game engine (Bevy) a little overkill?
+Yes. Yes it is.
 
 ## Roadmap
 
