@@ -40,7 +40,9 @@ Each turn, the apples decay; becoming rotten and eventually disappearing.
 Initially, an apple is worth `value` (default: 5). As the apple decays, this will decrease linearly.
 At the halfway point in its decay, the apple becomes rotten and eating it will shrink your snake.
 After eating the apple, your snake will grow by one each turn for $v$ turns.
+
 $$ v_t = \lfloor V \times ({l_t \over l_0} \times 2 - 1) \rceil $$
+
 where $l_i$ is the apple's remaining lifetime.
 
 ### Kills and Deaths
