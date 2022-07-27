@@ -21,7 +21,8 @@ USAGE:
 
 OPTIONS:
     -c, --config <FILE>    The file to read game settings from [default: config.yaml]
-    -h, --help             Print help information
+    -h, --headless         Run in headless mode, without any graphical output
+        --help             Print help information
     -V, --version          Print version information
 ```
 
