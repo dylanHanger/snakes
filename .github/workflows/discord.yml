@@ -11,11 +11,11 @@ jobs:
     steps:
       - shell: bash
         run: |
-          
-      
+
+
       - name: Discord notification
         env:
           DISCORD_WEBHOOK: ${{ secrets.DISCORD_WEBHOOK }}
         uses: Ilshidur/action-discord@0.3.2
         with:
-          args: 'Snakes! ${{ github.event.release.tag_name }} has been released. Download it here ${{ github.event.release.url }}'
+          args: 'Snakes! ${{ github.event.release.tag_name }} has been released. Download it here ${{ github.event.release.html_url }}'
