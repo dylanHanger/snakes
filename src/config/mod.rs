@@ -1,4 +1,8 @@
-use std::{fs::File, io::BufReader, path::PathBuf};
+use std::{
+    fs::File,
+    io::{self, BufReader},
+    path::PathBuf,
+};
 
 use bevy::utils::HashMap;
 use serde::{Deserialize, Deserializer};
@@ -11,17 +15,31 @@ use crate::{
     turns::config::TurnConfig,
 };
 
-pub fn read_config_from_file(path: &PathBuf) -> GameConfig {
-    match File::open(path) {
-        Ok(f) => {
-            let buf_reader = BufReader::new(f);
-            serde_yaml::from_reader(buf_reader).expect("The config file was malformed")
-        }
-        Err(e) => panic!("Could not read config file: {}", e),
+#[derive(Debug)]
+pub enum ConfigError {
+    IOError(io::Error),
+    SerdeError(serde_yaml::Error),
+}
+impl From<io::Error> for ConfigError {
+    fn from(error: io::Error) -> Self {
+        ConfigError::IOError(error)
+    }
+}
+impl From<serde_yaml::Error> for ConfigError {
+    fn from(error: serde_yaml::Error) -> Self {
+        ConfigError::SerdeError(error)
     }
 }
 
-#[derive(Debug)]
+pub fn read_config_from_file(path: &PathBuf) -> Result<GameConfig, ConfigError> {
+    // Open the config file and read it using serde_yaml
+    let file = File::open(path)?;
+    let reader = BufReader::new(file);
+    let config: GameConfig = serde_yaml::from_reader(reader)?;
+    Ok(config)
+}
+
+#[derive(Debug, Default)]
 pub struct GameConfig {
     pub grid: GameGrid,
 

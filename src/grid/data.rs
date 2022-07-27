@@ -29,6 +29,7 @@ impl GridScale {
 }
 
 #[derive(Debug, Deserialize)]
+#[serde(default)]
 pub struct GameGrid {
     pub width: usize,
     pub height: usize,

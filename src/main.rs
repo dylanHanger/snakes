@@ -53,7 +53,7 @@ impl Default for ProcessedEntities {
 struct SnakesPlugin;
 impl Plugin for SnakesPlugin {
     fn build(&self, app: &mut App) {
-        let config = read_config_from_file(&PathBuf::from("config.yaml"));
+        let config = read_config_from_file(&PathBuf::from("config.yaml")).unwrap_or_default();
 
         app.add_plugins(DefaultPlugins)
             .insert_resource(config.grid)
