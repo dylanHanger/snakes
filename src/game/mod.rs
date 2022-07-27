@@ -12,16 +12,18 @@ pub mod prelude {}
 
 use std::path::PathBuf;
 
-use bevy::prelude::{
-    App, Commands, Component, CoreStage, DefaultPlugins, IntoChainSystem, OrthographicCameraBundle,
-    Plugin, StartupStage, SystemSet, SystemStage,
+use bevy::{
+    diagnostic::{DiagnosticsPlugin, LogDiagnosticsPlugin},
+    log::LogPlugin,
+    prelude::{
+        App, Component, CoreStage, IntoChainSystem, Plugin, StartupStage, SystemSet, SystemStage,
+    },
 };
 use iyes_loopless::prelude::ConditionSet;
 
 use collisions::prelude::*;
 use death::prelude::*;
 use food::prelude::*;
-use grid::prelude::*;
 use input::prelude::*;
 use movement::prelude::*;
 use players::prelude::*;
@@ -50,7 +52,9 @@ impl Plugin for SnakesPlugin {
             )
         });
 
-        app.add_plugins(DefaultPlugins);
+        app.add_plugin(DiagnosticsPlugin::default())
+            .add_plugin(LogPlugin::default())
+            .add_plugin(LogDiagnosticsPlugin::default());
 
         // Add stages for more fine grained control over when entities are added or removed
         add_stages(app);
@@ -65,9 +69,6 @@ impl Plugin for SnakesPlugin {
         add_food(app, config.food);
         add_simulation(app);
         add_input(app);
-
-        // Add everything related to displaying the game
-        add_rendering(app);
 
         // Add a cleanup system to prevent zombie processes
         app.add_system_set_to_stage(
@@ -107,19 +108,6 @@ fn add_stages(app: &mut App) {
         TurnStage::PostSimulate,
         SystemStage::parallel(),
     );
-}
-
-fn add_rendering(app: &mut App) {
-    app.insert_resource(PlayerColors::default())
-        .add_startup_system(setup_camera)
-        .add_system_set_to_stage(
-            CoreStage::PostUpdate,
-            SystemSet::new()
-                .label("rendering")
-                .with_system(color_players)
-                .with_system(color_food)
-                .with_system(draw_grid_objects),
-        );
 }
 
 fn add_players(app: &mut App, player_configs: Vec<PlayerConfig>) {
@@ -254,9 +242,7 @@ fn add_input(app: &mut App) {
         SystemSet::new()
             .label("input")
             // Read input from the external agents
-            .with_system(external_moves_system)
-            // Read input from the keyboard
-            .with_system(keyboard_moves_system),
+            .with_system(external_moves_system),
     )
     .add_system_set_to_stage(
         TurnStage::PostRequest,
@@ -269,8 +255,4 @@ fn add_input(app: &mut App) {
             .with_system(default_snake_moves)
             .into(),
     );
-}
-
-fn setup_camera(mut commands: Commands) {
-    commands.spawn_bundle(OrthographicCameraBundle::new_2d());
 }

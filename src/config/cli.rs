@@ -14,4 +14,11 @@ pub struct Cli {
         default_value = "config.yaml"
     )]
     pub config: PathBuf,
+    #[clap(
+        short,
+        long,
+        parse(from_flag),
+        help = "Run in headless mode, without any graphical output"
+    )]
+    pub headless: bool,
 }

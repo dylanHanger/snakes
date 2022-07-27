@@ -1,5 +1,3 @@
-use std::ops::{Add, Mul};
-
 use bevy::prelude::{
     default, Color, Commands, Entity, EventWriter, Query, Res, ResMut, Sprite, SpriteBundle, With,
 };
@@ -87,25 +85,5 @@ pub fn rotting_system(
             commands.entity(e).despawn();
             processed_entities.insert(e);
         }
-    }
-}
-
-pub fn color_food(mut foods: Query<(&mut Sprite, &mut GridScale, &Food)>) {
-    fn lerp<T>(a: T, b: T, t: f32) -> T
-    where
-        T: Add<Output = T> + Mul<f32, Output = T>,
-    {
-        a * t + b * (1. - t)
-    }
-
-    for (mut sprite, mut scale, food) in foods.iter_mut() {
-        let alpha = food.get_factor() * 0.5 + 0.5;
-
-        let color = lerp(Color::GREEN, Color::RED, alpha);
-        sprite.color = color;
-
-        let size = lerp(0.6, 0.3, alpha);
-        scale.x = size;
-        scale.y = size;
     }
 }
