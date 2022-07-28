@@ -1,5 +1,5 @@
 use bevy::prelude::{Commands, Entity, Input, KeyCode, Query, Res, ResMut, With, Without};
-use rand::Rng;
+use bevy_turborand::RngComponent;
 
 use crate::game::{
     food::prelude::Food,
@@ -15,12 +15,11 @@ use super::data::{BuiltinAi, CustomAi, KeyboardInput, RandomAi};
 
 pub fn random_moves_system(
     mut commands: Commands,
-    q: Query<Entity, (With<Actor>, With<RandomAi>, Without<MoveIntent>)>,
+    mut q: Query<(Entity, &mut RngComponent), (With<Actor>, With<RandomAi>, Without<MoveIntent>)>,
 ) {
-    let mut rng = rand::thread_rng();
-
-    for e in q.iter() {
-        let random_move = match rng.gen_range(0..4) {
+    for (e, mut rand) in q.iter_mut() {
+        let rng = rand.get_mut();
+        let random_move = match rng.u32(0..4) {
             0 => Direction::North,
             1 => Direction::East,
             2 => Direction::South,

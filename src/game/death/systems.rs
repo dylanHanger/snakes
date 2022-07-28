@@ -1,4 +1,5 @@
 use bevy::prelude::{Commands, Entity, EventReader, Query, Res, ResMut, With, Without};
+use bevy_turborand::RngComponent;
 
 use crate::game::{
     grid::prelude::{GameGrid, GridPosition},
@@ -66,13 +67,14 @@ pub fn death_timer_system(
 
 pub fn respawn_system(
     mut commands: Commands,
-    respawns: Query<(Entity, Option<&Player>), With<Respawning>>,
+    mut respawns: Query<(Entity, &mut RngComponent, Option<&Player>), With<Respawning>>,
     occupied: Query<&GridPosition>,
     grid: Res<GameGrid>,
 ) {
-    for (e, player) in respawns.iter() {
+    for (e, mut rng, player) in respawns.iter_mut() {
+        let rng = rng.get_mut();
         let mut entity = commands.entity(e);
-        let position = grid.get_unoccupied_position(&occupied);
+        let position = grid.get_unoccupied_position(&occupied, rng);
 
         entity
             .remove::<Respawning>()

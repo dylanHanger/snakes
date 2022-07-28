@@ -1,7 +1,9 @@
 mod cli;
 
 use std::{
+    collections::hash_map::DefaultHasher,
     fs::File,
+    hash::{Hash, Hasher},
     io::{self, BufReader},
     path::PathBuf,
 };
@@ -47,6 +49,8 @@ pub fn read_config_from_file(path: &PathBuf) -> Result<GameConfig, ConfigError> 
 pub struct GameConfig {
     pub grid: GameGrid,
 
+    pub seed: Option<u64>,
+
     pub turns: TurnConfig,
     pub death: DeathConfig,
     pub food: FoodConfig,
@@ -63,6 +67,8 @@ impl<'de> Deserialize<'de> for GameConfig {
             #[serde(flatten)]
             grid: GameGrid,
 
+            seed: Option<String>,
+
             #[serde(flatten)]
             turns: TurnConfig,
 
@@ -76,14 +82,22 @@ impl<'de> Deserialize<'de> for GameConfig {
 
         let Mapping {
             grid,
+            seed,
             turns,
             death,
             food,
             players,
         } = Mapping::deserialize(deserializer)?;
 
+        let mut h = DefaultHasher::new();
+        let seed = seed.map(|seed| {
+            seed.hash(&mut h);
+            h.finish()
+        });
+
         Ok(Self {
             grid,
+            seed,
             death,
             turns,
             food,

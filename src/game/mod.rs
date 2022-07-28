@@ -19,6 +19,7 @@ use bevy::{
         App, Component, CoreStage, IntoChainSystem, Plugin, StartupStage, SystemSet, SystemStage,
     },
 };
+use bevy_turborand::RngPlugin;
 use iyes_loopless::prelude::ConditionSet;
 
 use collisions::prelude::*;
@@ -54,7 +55,8 @@ impl Plugin for SnakesPlugin {
 
         app.add_plugin(DiagnosticsPlugin::default())
             .add_plugin(LogPlugin::default())
-            .add_plugin(LogDiagnosticsPlugin::default());
+            .add_plugin(LogDiagnosticsPlugin::default())
+            .add_plugin(RngPlugin::new(config.seed));
 
         // Add stages for more fine grained control over when entities are added or removed
         add_stages(app);

@@ -1,7 +1,7 @@
 use std::ops::{Index, IndexMut};
 
 use bevy::prelude::{Component, Deref, DerefMut, IVec2, Query, Vec2};
-use rand::Rng;
+use bevy_turborand::rng::{CellState, Rng};
 use serde::Deserialize;
 
 use crate::game::movement::prelude::Direction;
@@ -47,13 +47,16 @@ impl GameGrid {
             && (position.y >= 0 && position.y < self.height as i32)
     }
 
-    pub fn get_unoccupied_position(&self, occupied: &Query<&GridPosition>) -> GridPosition {
+    pub fn get_unoccupied_position(
+        &self,
+        occupied: &Query<&GridPosition>,
+        rng: &mut Rng<CellState>,
+    ) -> GridPosition {
         // TODO: This will hang if there are no unoccupied positions
-        let mut rng = rand::thread_rng();
         'outer: loop {
             let p = GridPosition::new(
-                rng.gen_range(0..self.width as i32),
-                rng.gen_range(0..self.height as i32),
+                rng.i32(0..self.width as i32),
+                rng.i32(0..self.height as i32),
             );
             for &obstacle in occupied.iter() {
                 if obstacle == p {

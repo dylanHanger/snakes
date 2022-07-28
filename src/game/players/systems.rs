@@ -1,4 +1,5 @@
 use bevy::prelude::{Commands, Query, Res, ResMut};
+use bevy_turborand::{GlobalRng, RngComponent};
 
 use crate::game::{
     death::prelude::Respawning,
@@ -26,10 +27,19 @@ pub fn setup_scoreboard(mut scoreboard: ResMut<Scoreboard>, players: Res<Vec<Pla
     }
 }
 
-pub fn setup_players(mut commands: Commands, players: Res<Vec<PlayerConfig>>) {
+pub fn setup_players(
+    mut commands: Commands,
+    players: Res<Vec<PlayerConfig>>,
+    mut global_rng: ResMut<GlobalRng>,
+) {
     for (id, config) in players.iter().enumerate() {
         let player = Player { id: id as u32 };
-        let e = commands.spawn().insert(player).insert(Respawning).id();
+        let e = commands
+            .spawn()
+            .insert(RngComponent::from_global(&mut global_rng))
+            .insert(player)
+            .insert(Respawning)
+            .id();
 
         match &config.player_type {
             PlayerType::Custom { executable, args } => commands

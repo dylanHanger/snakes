@@ -1,6 +1,7 @@
 use bevy::prelude::{
     default, Color, Commands, Entity, EventWriter, Query, Res, ResMut, Sprite, SpriteBundle, With,
 };
+use bevy_turborand::GlobalRng;
 
 use crate::game::{
     death::prelude::DeathEvent,
@@ -23,8 +24,10 @@ pub fn spawn_food_system(
     occupied: Query<&GridPosition>,
     grid: Res<GameGrid>,
     food_config: Res<FoodConfig>,
+    mut global_rng: ResMut<GlobalRng>,
 ) {
-    let position = grid.get_unoccupied_position(&occupied);
+    let rng = global_rng.get_mut();
+    let position = grid.get_unoccupied_position(&occupied, rng);
     commands
         .spawn_bundle(SpriteBundle {
             sprite: Sprite {
