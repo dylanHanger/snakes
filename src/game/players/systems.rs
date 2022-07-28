@@ -29,11 +29,7 @@ pub fn setup_scoreboard(mut scoreboard: ResMut<Scoreboard>, players: Res<Vec<Pla
 pub fn setup_players(mut commands: Commands, players: Res<Vec<PlayerConfig>>) {
     for (id, config) in players.iter().enumerate() {
         let player = Player { id: id as u32 };
-        let e = commands
-            .spawn()
-            .insert(player)
-            .insert(Respawning::now())
-            .id();
+        let e = commands.spawn().insert(player).insert(Respawning).id();
 
         match &config.player_type {
             PlayerType::Custom { executable, args } => commands

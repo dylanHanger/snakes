@@ -8,11 +8,9 @@ pub struct DeathEvent {
 }
 
 #[derive(Component)]
-pub struct Respawning {
+pub struct Respawning;
+
+#[derive(Component)]
+pub struct Dead {
     pub time: u32,
-}
-impl Respawning {
-    pub fn now() -> Self {
-        Self { time: 0 }
-    }
 }

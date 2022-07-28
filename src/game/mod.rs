@@ -200,6 +200,14 @@ fn add_death(app: &mut App, death_config: DeathConfig) {
     app.add_event::<DeathEvent>()
         .insert_resource(death_config)
         .add_system_set_to_stage(
+            TurnStage::PreTurn,
+            ConditionSet::new()
+                .label("spawn snakes")
+                .run_if_not(turn_requested)
+                .with_system(respawn_system)
+                .into(),
+        )
+        .add_system_set_to_stage(
             TurnStage::PostSimulate,
             SystemSet::new()
                 .label("deaths")
@@ -212,7 +220,7 @@ fn add_death(app: &mut App, death_config: DeathConfig) {
                 .label("respawn")
                 .after("deaths")
                 .run_if(turn_ready)
-                .with_system(respawn_system)
+                .with_system(death_timer_system)
                 .into(),
         );
 }
