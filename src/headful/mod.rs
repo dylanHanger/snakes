@@ -3,6 +3,7 @@ use std::ops::{Add, Mul};
 use bevy::{
     asset::AssetPlugin,
     core_pipeline::CorePipelinePlugin,
+    hierarchy::HierarchyPlugin,
     input::InputPlugin,
     math::{Vec2, Vec3},
     prelude::{
@@ -29,6 +30,7 @@ pub struct HeadfulPlugin;
 impl Plugin for HeadfulPlugin {
     fn build(&self, app: &mut bevy::prelude::App) {
         app.add_plugin(InputPlugin::default())
+            .add_plugin(HierarchyPlugin::default())
             .add_plugin(TransformPlugin::default())
             .add_plugin(WindowPlugin::default())
             .add_plugin(AssetPlugin::default())
