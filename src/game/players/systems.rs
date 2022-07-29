@@ -7,41 +7,31 @@ use crate::game::{
     snakes::prelude::Snake,
 };
 
-use super::{
-    config::{PlayerConfig, PlayerType},
-    data::{Player, Scoreboard},
-};
+use super::{config::PlayerType, data::PlayerId, prelude::Players};
 
-pub fn scoreboard_system(players: Query<(&Snake, &Player)>, mut scoreboard: ResMut<Scoreboard>) {
-    for (snake, player) in players.iter() {
-        let score = scoreboard.get_mut(player).unwrap();
-        score.current_length = 1 + snake.body.len();
-        score.max_length = usize::max(score.max_length, score.current_length);
-    }
-}
-
-pub fn setup_scoreboard(mut scoreboard: ResMut<Scoreboard>, players: Res<Vec<PlayerConfig>>) {
-    for (id, _config) in players.iter().enumerate() {
-        let player = Player { id: id as u32 };
-        scoreboard.add_player(player);
+pub fn scoreboard_system(snakes: Query<(&Snake, &PlayerId)>, mut players: ResMut<Players>) {
+    for (snake, player) in snakes.iter() {
+        let details = players.get_mut(player).unwrap();
+        details.score.current_length = 1 + snake.body.len();
+        details.score.max_length =
+            usize::max(details.score.max_length, details.score.current_length);
     }
 }
 
 pub fn setup_players(
     mut commands: Commands,
-    players: Res<Vec<PlayerConfig>>,
+    players: Res<Players>,
     mut global_rng: ResMut<GlobalRng>,
 ) {
-    for (id, config) in players.iter().enumerate() {
-        let player = Player { id: id as u32 };
+    for (&id, details) in players.iter() {
         let e = commands
             .spawn()
             .insert(RngComponent::from_global(&mut global_rng))
-            .insert(player)
+            .insert(id)
             .insert(Respawning)
             .id();
 
-        match &config.player_type {
+        match &details.player_type {
             PlayerType::Custom { executable, args } => commands
                 .entity(e)
                 .insert(CustomAi::new(executable.to_string(), args.to_vec())),

@@ -1,6 +1,9 @@
+use bevy::prelude::Color;
 use serde::Deserialize;
 
 use crate::game::input::prelude::{BuiltinAi, KeyboardInput};
+
+use super::prelude::Score;
 
 #[derive(Debug, Deserialize, Clone)]
 #[serde(tag = "type", rename_all = "lowercase")]
@@ -18,16 +21,10 @@ pub enum PlayerType {
     Random,
 }
 
-#[derive(Debug, Deserialize)]
-pub struct PlayerConfig {
+#[derive(Debug)]
+pub struct PlayerDetails {
     pub name: String,
+    pub color: Color,
+    pub score: Score,
     pub player_type: PlayerType,
-}
-impl PlayerConfig {
-    pub fn new(name: String, snake_type: PlayerType) -> Self {
-        Self {
-            name,
-            player_type: snake_type,
-        }
-    }
 }

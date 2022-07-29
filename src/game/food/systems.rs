@@ -4,6 +4,7 @@ use bevy::prelude::{
 use bevy_turborand::GlobalRng;
 
 use crate::game::{
+    collisions::prelude::Collidable,
     death::prelude::DeathEvent,
     grid::prelude::{GameGrid, GridPosition, GridScale},
     snakes::prelude::Snake,
@@ -21,7 +22,7 @@ pub fn can_spawn_food(food: Query<&GridPosition, With<Food>>) -> bool {
 
 pub fn spawn_food_system(
     mut commands: Commands,
-    occupied: Query<&GridPosition>,
+    occupied: Query<&GridPosition, With<Collidable>>,
     grid: Res<GameGrid>,
     food_config: Res<FoodConfig>,
     mut global_rng: ResMut<GlobalRng>,
@@ -38,6 +39,7 @@ pub fn spawn_food_system(
         })
         .insert(position)
         .insert(GridScale::square(0.5))
+        .insert(Collidable)
         .insert(Rottable)
         .insert(Food::new(food_config.last_for_turns));
 }

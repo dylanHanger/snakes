@@ -1,10 +1,10 @@
 use bevy::prelude::{Component, Entity};
 
-use crate::game::players::prelude::Player;
+use crate::game::players::prelude::PlayerId;
 
 pub struct DeathEvent {
     pub target: Entity,
-    pub culprit: Option<Player>,
+    pub culprit: Option<PlayerId>,
 }
 
 #[derive(Component)]

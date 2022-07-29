@@ -2,8 +2,9 @@ use bevy::prelude::*;
 
 use crate::game::{
     death::prelude::DeathEvent,
+    food::prelude::Food,
     grid::prelude::{GameGrid, GridPosition},
-    players::prelude::Player,
+    players::prelude::PlayerId,
     snakes::prelude::Snake,
 };
 
@@ -11,7 +12,10 @@ use super::data::Collidable;
 
 pub fn collision_system(
     snakes: Query<(Entity, &GridPosition), With<Snake>>,
-    collidables: Query<(Entity, &GridPosition, Option<&Player>), With<Collidable>>,
+    collidables: Query<
+        (Entity, &GridPosition, Option<&PlayerId>),
+        (With<Collidable>, Without<Food>),
+    >,
     grid: Res<GameGrid>,
     mut deaths: EventWriter<DeathEvent>,
 ) {

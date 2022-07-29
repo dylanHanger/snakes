@@ -1,10 +1,10 @@
 use std::ops::{Index, IndexMut};
 
-use bevy::prelude::{Component, Deref, DerefMut, IVec2, Query, Vec2};
+use bevy::prelude::{Component, Deref, DerefMut, IVec2, Query, Vec2, With};
 use bevy_turborand::rng::{CellState, Rng};
 use serde::Deserialize;
 
-use crate::game::movement::prelude::Direction;
+use crate::game::{collisions::prelude::Collidable, movement::prelude::Direction};
 
 // Every object has a grid position and occupies one grid cell
 #[derive(Component, Deref, DerefMut, Clone, Copy, PartialEq, Eq)]
@@ -49,7 +49,7 @@ impl GameGrid {
 
     pub fn get_unoccupied_position(
         &self,
-        occupied: &Query<&GridPosition>,
+        occupied: &Query<&GridPosition, With<Collidable>>,
         rng: &mut Rng<CellState>,
     ) -> GridPosition {
         // TODO: This will hang if there are no unoccupied positions

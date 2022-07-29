@@ -2,8 +2,9 @@ use bevy::prelude::{Commands, Entity, EventReader, Query, Res, ResMut, With, Wit
 use bevy_turborand::RngComponent;
 
 use crate::game::{
+    collisions::prelude::Collidable,
     grid::prelude::{GameGrid, GridPosition},
-    players::prelude::{Player, Scoreboard},
+    players::prelude::{PlayerId, Players},
     snakes::prelude::{Snake, SnakeBundle},
 };
 
@@ -13,8 +14,8 @@ pub fn death_system(
     mut commands: Commands,
     mut snakes: Query<&mut Snake>,
     mut deaths: EventReader<DeathEvent>,
-    players: Query<&Player>,
-    mut scoreboard: ResMut<Scoreboard>,
+    player_ids: Query<&PlayerId>,
+    mut players: ResMut<Players>,
     death_config: Res<DeathConfig>,
 ) {
     for &DeathEvent { target, culprit } in deaths.iter() {
@@ -30,18 +31,18 @@ pub fn death_system(
                 });
 
             // Update scores
-            if let Ok(&player) = players.get(target) {
-                if let Some(score) = scoreboard.get_mut(&player) {
-                    score.deaths += 1;
+            if let Ok(&player) = player_ids.get(target) {
+                if let Some(details) = players.get_mut(&player) {
+                    details.score.deaths += 1;
                 }
 
                 if let Some(other_player) = culprit {
                     if player != other_player {
-                        if let Some(score) = scoreboard.get_mut(&other_player) {
-                            score.kills += 1;
+                        if let Some(details) = players.get_mut(&other_player) {
+                            details.score.kills += 1;
                         }
-                    } else if let Some(score) = scoreboard.get_mut(&player) {
-                        score.kills -= 1;
+                    } else if let Some(details) = players.get_mut(&player) {
+                        details.score.kills -= 1;
                     }
                 }
             }
@@ -67,8 +68,8 @@ pub fn death_timer_system(
 
 pub fn respawn_system(
     mut commands: Commands,
-    mut respawns: Query<(Entity, &mut RngComponent, Option<&Player>), With<Respawning>>,
-    occupied: Query<&GridPosition>,
+    mut respawns: Query<(Entity, &mut RngComponent, Option<&PlayerId>), With<Respawning>>,
+    occupied: Query<&GridPosition, With<Collidable>>,
     grid: Res<GameGrid>,
 ) {
     for (e, mut rng, player) in respawns.iter_mut() {

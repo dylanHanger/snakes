@@ -5,7 +5,7 @@ use crate::game::{
     food::prelude::Food,
     grid::prelude::{CellType, GameGrid, GridPosition, Map},
     movement::prelude::{Direction, MoveIntent},
-    players::prelude::Player,
+    players::prelude::PlayerId,
     snakes::prelude::{Snake, SnakeSegment},
     turns::prelude::Turn,
     Actor,
@@ -71,7 +71,7 @@ pub fn kill_external_agents(mut commands: Commands, agents: Query<Entity, With<C
     }
 }
 
-pub fn init_external_agents(agents: Query<(&CustomAi, &Player)>, grid: Res<GameGrid>) {
+pub fn init_external_agents(agents: Query<(&CustomAi, &PlayerId)>, grid: Res<GameGrid>) {
     for (agent, player) in agents.iter() {
         println!("Starting game");
         // The game size
@@ -88,13 +88,13 @@ pub fn request_turn_system(mut turn: ResMut<Turn>) {
 
 pub fn external_update_system(
     agents: Query<&CustomAi, With<Actor>>,
-    snakes: Query<(&GridPosition, &Snake, Option<&Player>)>,
+    snakes: Query<(&GridPosition, &Snake, Option<&PlayerId>)>,
     segments: Query<&GridPosition, With<SnakeSegment>>,
     food: Query<&GridPosition, With<Food>>,
 ) {
     let mut sorted_snakes = snakes
         .iter()
-        .collect::<Vec<(&GridPosition, &Snake, Option<&Player>)>>();
+        .collect::<Vec<(&GridPosition, &Snake, Option<&PlayerId>)>>();
     sorted_snakes.sort_by_key(|(_, _, p)| {
         if let Some(player) = p {
             player.id
@@ -134,7 +134,7 @@ pub fn ai_moves_system(
     agents: Query<(Entity, &BuiltinAi, &GridPosition, Option<&Snake>), With<Actor>>,
     positions: Query<(
         &GridPosition,
-        Option<&Player>,
+        Option<&PlayerId>,
         Option<&SnakeSegment>,
         Option<&Food>,
     )>,

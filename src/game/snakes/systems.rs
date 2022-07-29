@@ -1,14 +1,14 @@
 use bevy::prelude::{Commands, Entity, Query, Without};
 
 use crate::game::{
-    grid::prelude::GridPosition, movement::prelude::MoveIntent, players::prelude::Player,
+    grid::prelude::GridPosition, movement::prelude::MoveIntent, players::prelude::PlayerId,
 };
 
 use super::data::{SegmentBundle, Snake};
 
 pub fn slither_system(
     mut commands: Commands,
-    mut q: Query<(&mut Snake, &GridPosition, &MoveIntent, Option<&Player>)>,
+    mut q: Query<(&mut Snake, &GridPosition, &MoveIntent, Option<&PlayerId>)>,
 ) {
     for (mut snake, position, intent, player) in q.iter_mut() {
         // Ensure the tail grows with the snakes movement

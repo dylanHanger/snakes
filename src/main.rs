@@ -21,7 +21,7 @@ fn main() {
 
     app.insert_resource(ClearColor(Color::rgb(0.2, 0.2, 0.2)))
         .insert_resource(WindowDescriptor {
-            width: 600.,
+            width: 900.,
             height: 600.,
             title: "Snakes!".to_string(),
             ..default()

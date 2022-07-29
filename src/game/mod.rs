@@ -33,10 +33,7 @@ use turns::prelude::*;
 
 use crate::config::read_config_from_file;
 
-use self::{
-    death::config::DeathConfig, food::config::FoodConfig, players::config::PlayerConfig,
-    turns::config::TurnConfig,
-};
+use self::{death::config::DeathConfig, food::config::FoodConfig, turns::config::TurnConfig};
 
 #[derive(Component)]
 pub struct Actor;
@@ -112,16 +109,13 @@ fn add_stages(app: &mut App) {
     );
 }
 
-fn add_players(app: &mut App, player_configs: Vec<PlayerConfig>) {
-    app.insert_resource(player_configs)
-        .insert_resource(Scoreboard::new())
+fn add_players(app: &mut App, player_details: Players) {
+    app.insert_resource(player_details)
         .add_startup_system_set(
             SystemSet::new()
                 .label("setup")
                 // Create the players and set them to spawn immediately
-                .with_system(setup_players)
-                // Setup the scoreboard with empty scores for each player
-                .with_system(setup_scoreboard),
+                .with_system(setup_players),
         )
         .add_system_to_stage(CoreStage::PostUpdate, scoreboard_system);
 }
