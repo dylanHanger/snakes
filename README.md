@@ -68,6 +68,8 @@ You can configure the game settings via a YAML file. By default, this file is ca
 width: <arena width>
 height: <arena height>
 
+seed: <seed for RNG>
+
 turns: <max turns>
 timeout: <allowed computation time>
 wait: <whether to wait for all snakes to compute a move>
