@@ -23,6 +23,9 @@ pub fn setup_players(
     players: Res<Players>,
     mut global_rng: ResMut<GlobalRng>,
 ) {
+    let mut players = players.iter().collect::<Vec<_>>();
+    players.sort_by_key(|(&id, _)| *id);
+
     for (&id, details) in players.iter() {
         let e = commands
             .spawn()
