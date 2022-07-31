@@ -16,11 +16,15 @@ use bevy::{
     diagnostic::{DiagnosticsPlugin, LogDiagnosticsPlugin},
     log::LogPlugin,
     prelude::{
-        App, Component, CoreStage, IntoChainSystem, Plugin, StartupStage, SystemSet, SystemStage,
+        App, Commands, Component, CoreStage, IntoChainSystem, Plugin, StartupStage, SystemSet,
+        SystemStage,
     },
 };
 use bevy_turborand::RngPlugin;
-use iyes_loopless::prelude::ConditionSet;
+use iyes_loopless::{
+    prelude::{AppLooplessStateExt, ConditionSet, IntoConditionalSystem},
+    state::NextState,
+};
 
 use collisions::prelude::*;
 use death::prelude::*;
@@ -81,6 +85,13 @@ impl Plugin for SnakesPlugin {
     }
 }
 
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+pub enum GameState {
+    Paused,
+    Step,
+    Running,
+}
+
 fn add_stages(app: &mut App) {
     app.add_stage_after(
         CoreStage::Update,
@@ -121,7 +132,8 @@ fn add_players(app: &mut App, player_details: Players) {
 }
 
 fn add_turns(app: &mut App, turn_config: TurnConfig) {
-    app.insert_resource(Turn::from(turn_config))
+    app.add_loopless_state(GameState::Running)
+        .insert_resource(Turn::from(turn_config))
         .add_system_set_to_stage(
             CoreStage::PreUpdate,
             ConditionSet::new()
@@ -130,7 +142,18 @@ fn add_turns(app: &mut App, turn_config: TurnConfig) {
                 // Increment the turn timer
                 .with_system(turn_timer_system)
                 // Check if the turn is ready to be simulated
-                .with_system(turn_ready_system)
+                .with_system(turn_ready_system.run_in_state(GameState::Running))
+                .into(),
+        )
+        .add_system_set_to_stage(
+            CoreStage::PostUpdate,
+            ConditionSet::new()
+                .label("step")
+                .run_in_state(GameState::Step)
+                .run_if(turn_ready)
+                .with_system(|mut commands: Commands| {
+                    commands.insert_resource(NextState(GameState::Running));
+                })
                 .into(),
         )
         .add_system_set_to_stage(

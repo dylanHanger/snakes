@@ -18,6 +18,7 @@ use bevy::{
     window::{WindowPlugin, Windows},
     winit::WinitPlugin,
 };
+use iyes_loopless::state::{CurrentState, NextState};
 
 use crate::game::{
     food::prelude::Food,
@@ -26,6 +27,7 @@ use crate::game::{
     players::prelude::{PlayerId, Players},
     snakes::prelude::Snake,
     turns::prelude::TurnStage,
+    GameState,
 };
 
 pub struct HeadfulPlugin;
@@ -70,7 +72,7 @@ impl Plugin for HeadfulPlugin {
 }
 
 fn add_ui(app: &mut App) {
-    app.add_startup_system(setup_ui);
+    app.add_startup_system(setup_ui).add_system(button_system);
 }
 
 #[derive(Component)]
@@ -78,6 +80,10 @@ struct ArenaArea;
 
 #[derive(Component)]
 struct ScoreboardUi;
+
+const NORMAL_BUTTON: Color = Color::rgb(0.15, 0.15, 0.15);
+const HOVERED_BUTTON: Color = Color::rgb(0.25, 0.25, 0.25);
+const PRESSED_BUTTON: Color = Color::rgb(0.35, 0.75, 0.35);
 
 fn setup_ui(mut commands: Commands, asset_server: Res<AssetServer>) {
     let saira = asset_server.load("fonts/Saira.ttf");
@@ -305,8 +311,72 @@ fn setup_ui(mut commands: Commands, asset_server: Res<AssetServer>) {
                                 })
                                 .insert(ScoreboardUi);
                         });
+
+                    // Pause button
+                    parent
+                        .spawn_bundle(ButtonBundle {
+                            style: Style {
+                                size: Size::new(Val::Px(150.0), Val::Px(65.0)),
+                                // center button
+                                margin: Rect::all(Val::Auto),
+                                // horizontally center child text
+                                justify_content: JustifyContent::Center,
+                                // vertically center child text
+                                align_items: AlignItems::Center,
+                                ..default()
+                            },
+                            color: NORMAL_BUTTON.into(),
+                            ..default()
+                        })
+                        .with_children(|parent| {
+                            parent.spawn_bundle(TextBundle {
+                                text: Text::with_section(
+                                    "Pause",
+                                    TextStyle {
+                                        font: asset_server.load("fonts/Saira.ttf"),
+                                        font_size: 40.0,
+                                        color: Color::rgb(0.9, 0.9, 0.9),
+                                    },
+                                    Default::default(),
+                                ),
+                                ..default()
+                            });
+                        });
                 });
         });
+}
+
+fn button_system(
+    mut commands: Commands,
+    current_state: Res<CurrentState<GameState>>,
+    mut interaction_query: Query<
+        (&Interaction, &mut UiColor, &Children),
+        (Changed<Interaction>, With<Button>),
+    >,
+    mut text_query: Query<&mut Text>,
+) {
+    let paused = current_state.0 == GameState::Paused;
+
+    for (interaction, mut color, children) in interaction_query.iter_mut() {
+        let mut text = text_query.get_mut(children[0]).unwrap();
+        match *interaction {
+            Interaction::Clicked => {
+                if !paused {
+                    text.sections[0].value = "Resume".to_string();
+                    commands.insert_resource(NextState(GameState::Paused));
+                } else {
+                    text.sections[0].value = "Pause".to_string();
+                    commands.insert_resource(NextState(GameState::Running));
+                }
+            }
+            Interaction::Hovered => {
+                *color = HOVERED_BUTTON.into();
+            }
+            Interaction::None => {
+                *color = NORMAL_BUTTON.into();
+            }
+        }
+    }
 }
 
 fn scoreboard_system(
