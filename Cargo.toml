@@ -1,22 +1,22 @@
 [package]
 name = "snakes"
-version = "0.3.0"
+version = "0.4.0"
 edition = "2021"
 license = "Apache-2.0"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-bevy = { version = "0.7.0", features = ["wayland", "serialize"] }
-bevy_turborand = "0.1.0"
+bevy = { version = "0.8.0", features = ["wayland", "serialize"] }
+bevy_easings = { version = "0.8.0", features = ["ui"] }
+bevy_turborand = "0.2.0"
 clap = { version = "3.2.15", features = ["derive"] }
 crossbeam-channel = "0.5.6"
-iyes_loopless = "0.6.1"
+iyes_loopless = "0.7.0"
 rand = "0.8.5"
 serde = { version = "1.0.140", features = ["derive"] }
 serde_yaml = "0.9.1"
 wait-timeout = "0.2.0"
-bevy-inspector-egui = "0.11.0"
 
 # Enable a small amount of optimization in debug mode
 [profile.dev]

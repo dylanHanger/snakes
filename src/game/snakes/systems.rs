@@ -1,7 +1,9 @@
-use bevy::prelude::{Commands, Entity, Query, Without};
+use bevy::prelude::{Commands, Entity, Query, Res, Without};
 
 use crate::game::{
-    grid::prelude::GridPosition, movement::prelude::MoveIntent, players::prelude::PlayerId,
+    grid::prelude::GridPosition,
+    movement::prelude::MoveIntent,
+    players::prelude::{PlayerId, Players},
 };
 
 use super::data::{SegmentBundle, Snake};
@@ -9,14 +11,18 @@ use super::data::{SegmentBundle, Snake};
 pub fn slither_system(
     mut commands: Commands,
     mut q: Query<(&mut Snake, &GridPosition, &MoveIntent, Option<&PlayerId>)>,
+    players: Res<Players>,
 ) {
     for (mut snake, position, intent, player) in q.iter_mut() {
         // Ensure the tail grows with the snakes movement
-        let mut segment = commands.spawn_bundle(SegmentBundle::new(*position));
-
+        let mut segment = commands.spawn();
+        let mut bundle = SegmentBundle::new(*position);
         if let Some(player) = player {
+            let details = players.get(player).expect("The player should exist");
             segment.insert(*player);
+            bundle.sprite.color = details.color * 0.6;
         }
+        segment.insert_bundle(bundle);
 
         snake.body.insert(0, segment.id());
 

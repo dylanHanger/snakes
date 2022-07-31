@@ -1,6 +1,6 @@
 use std::time::Duration;
 
-use bevy::{core::Timer, prelude::StageLabel};
+use bevy::{prelude::StageLabel, time::Timer};
 
 use super::config::TurnConfig;
 

@@ -71,18 +71,19 @@ pub fn respawn_system(
     mut respawns: Query<(Entity, &mut RngComponent, Option<&PlayerId>), With<Respawning>>,
     occupied: Query<&GridPosition, With<Collidable>>,
     grid: Res<GameGrid>,
+    players: Res<Players>,
 ) {
     for (e, mut rng, player) in respawns.iter_mut() {
         let rng = rng.get_mut();
         let mut entity = commands.entity(e);
         let position = grid.get_unoccupied_position(&occupied, rng);
 
-        entity
-            .remove::<Respawning>()
-            .insert_bundle(SnakeBundle::new(position));
-
+        let mut bundle = SnakeBundle::new(position);
         if let Some(player) = player {
+            let details = players.get(player).expect("The player should exist");
+            bundle.sprite.color = details.color;
             entity.insert(*player);
         }
+        entity.remove::<Respawning>().insert_bundle(bundle);
     }
 }

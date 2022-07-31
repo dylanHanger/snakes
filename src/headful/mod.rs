@@ -1,31 +1,36 @@
-use std::ops::{Add, Mul};
+use std::{
+    ops::{Add, Mul},
+    time::Duration,
+};
 
 use bevy::{
     asset::AssetPlugin,
     core_pipeline::CorePipelinePlugin,
     hierarchy::HierarchyPlugin,
     input::InputPlugin,
-    math::{Rect, Vec2, Vec3, Vec3Swizzles},
+    math::{Vec2, Vec3, Vec3Swizzles},
     prelude::{
-        default, App, Color, Commands, CoreStage, OrthographicCameraBundle, Plugin, Query, Res,
-        SystemSet, Transform, UiCameraBundle, *,
+        default, App, Color, Commands, CoreStage, Plugin, Query, Res, SystemSet, Transform, *,
     },
     render::RenderPlugin,
-    sprite::{Sprite, SpriteBundle, SpritePlugin},
+    sprite::{Sprite, SpritePlugin},
     text::TextPlugin,
     transform::TransformPlugin,
-    ui::UiPlugin,
+    ui::{UiPlugin, UiRect},
     window::{WindowPlugin, Windows},
     winit::WinitPlugin,
 };
-use iyes_loopless::state::{CurrentState, NextState};
+use bevy_easings::{Ease, EaseFunction, EasingType, EasingsPlugin};
+use iyes_loopless::{
+    prelude::{ConditionSet, IntoConditionalSystem},
+    state::{CurrentState, NextState},
+};
 
 use crate::game::{
     food::prelude::Food,
     grid::prelude::{GameGrid, GridPosition, GridScale},
     input::prelude::keyboard_moves_system,
     players::prelude::{PlayerId, Players},
-    snakes::prelude::Snake,
     turns::prelude::TurnStage,
     GameState,
 };
@@ -33,6 +38,14 @@ use crate::game::{
 pub struct HeadfulPlugin;
 impl Plugin for HeadfulPlugin {
     fn build(&self, app: &mut bevy::prelude::App) {
+        app.insert_resource(ClearColor(Color::rgb(0.1, 0.1, 0.1)))
+            .insert_resource(WindowDescriptor {
+                width: 900.,
+                height: 600.,
+                title: "Snakes!".to_string(),
+                ..default()
+            });
+
         app.add_plugin(InputPlugin::default())
             .add_plugin(HierarchyPlugin::default())
             .add_plugin(TransformPlugin::default())
@@ -43,16 +56,9 @@ impl Plugin for HeadfulPlugin {
             .add_plugin(CorePipelinePlugin::default())
             .add_plugin(SpritePlugin::default())
             .add_plugin(TextPlugin::default())
-            .add_plugin(UiPlugin::default());
+            .add_plugin(UiPlugin::default())
+            .add_plugin(EasingsPlugin);
 
-        #[cfg(debug_assertions)]
-        {
-            use bevy_inspector_egui::widgets::InspectorQuery;
-
-            type RootUINode = InspectorQuery<Entity, (With<Node>, Without<Parent>)>;
-
-            app.add_plugin(bevy_inspector_egui::InspectorPlugin::<RootUINode>::new());
-        }
         // Add everything related to displaying the game
         add_rendering(app);
 
@@ -60,7 +66,6 @@ impl Plugin for HeadfulPlugin {
         add_ui(app);
 
         app.add_startup_system(setup_cameras);
-        app.add_system_to_stage(TurnStage::PostSimulate, scoreboard_system);
         app.add_system_set_to_stage(
             TurnStage::Request,
             SystemSet::new()
@@ -72,21 +77,21 @@ impl Plugin for HeadfulPlugin {
 }
 
 fn add_ui(app: &mut App) {
-    app.add_startup_system(setup_ui).add_system(button_system);
+    app.add_startup_system(setup_ui)
+        .add_startup_system_to_stage(StartupStage::PostStartup, init_scoreboard)
+        .add_system(update_scoreboard)
+        .add_system_set(
+            ConditionSet::new()
+                .with_system(button_interactions)
+                .with_system(pause_button_text)
+                .with_system(toggle_pause.run_if(button_clicked::<PauseButton>))
+                .into(),
+        );
 }
-
 #[derive(Component)]
 struct ArenaArea;
 
-#[derive(Component)]
-struct ScoreboardUi;
-
-const NORMAL_BUTTON: Color = Color::rgb(0.15, 0.15, 0.15);
-const HOVERED_BUTTON: Color = Color::rgb(0.25, 0.25, 0.25);
-const PRESSED_BUTTON: Color = Color::rgb(0.35, 0.75, 0.35);
-
 fn setup_ui(mut commands: Commands, asset_server: Res<AssetServer>) {
-    let saira = asset_server.load("fonts/Saira.ttf");
     commands
         // Root node
         .spawn_bundle(NodeBundle {
@@ -118,400 +123,281 @@ fn setup_ui(mut commands: Commands, asset_server: Res<AssetServer>) {
                         justify_content: JustifyContent::FlexStart,
                         flex_grow: 1.,
                         flex_basis: Val::Px(0.),
+                        padding: UiRect {
+                            top: Val::Undefined,
+                            ..UiRect::all(Val::Px(10.))
+                        },
+                        ..default()
+                    },
+                    color: Color::rgb(0.5, 0.5, 0.5).into(),
+                    ..default()
+                })
+                .with_children(|parent| {
+                    spawn_sidebar_header(parent, asset_server.load("fonts/Saira.ttf"));
+                    spawn_scoreboard(parent, asset_server.load("fonts/Saira.ttf"));
+                    spawn_playback_controls(parent, asset_server.load("fonts/Saira.ttf"));
+                });
+        });
+}
+
+fn spawn_sidebar_header(parent: &mut ChildBuilder, font: Handle<Font>) {
+    parent
+        .spawn_bundle(NodeBundle {
+            style: Style {
+                flex_basis: Val::Px(0.),
+                flex_shrink: 0.,
+                margin: UiRect::all(Val::Px(10.)),
+                justify_content: JustifyContent::Center,
+                ..default()
+            },
+            color: Color::NONE.into(),
+            ..default()
+        })
+        .with_children(|parent| {
+            parent.spawn_bundle(TextBundle::from_section(
+                "Snakes!",
+                TextStyle {
+                    font,
+                    font_size: 32.,
+                    color: Color::BLACK,
+                },
+            ));
+        });
+}
+
+#[derive(Component)]
+struct ScoreboardUi;
+#[derive(Component)]
+struct Scoreline;
+
+fn spawn_scoreboard(parent: &mut ChildBuilder, font: Handle<Font>) {
+    parent
+        .spawn_bundle(NodeBundle {
+            style: Style {
+                flex_direction: FlexDirection::ColumnReverse,
+                padding: UiRect::all(Val::Px(5.)),
+                margin: UiRect {
+                    bottom: Val::Px(10.),
+                    ..default()
+                },
+                flex_shrink: 1.,
+                flex_grow: 1.,
+                ..default()
+            },
+            color: Color::rgb(0.3, 0.3, 0.3).into(),
+            ..default()
+        })
+        .with_children(|parent| {
+            // A heading row with the score labels
+            parent
+                .spawn_bundle(NodeBundle {
+                    style: Style {
+                        flex_direction: FlexDirection::Row,
+                        justify_content: JustifyContent::FlexEnd,
+                        size: Size::new(Val::Percent(100.), Val::Auto),
                         ..default()
                     },
                     color: Color::NONE.into(),
                     ..default()
                 })
                 .with_children(|parent| {
-                    // Sidebar title
+                    parent.spawn_bundle(NodeBundle {
+                        style: Style {
+                            flex_grow: 1. / 3.,
+                            flex_shrink: 0.,
+                            ..default()
+                        },
+                        color: Color::NONE.into(),
+                        ..default()
+                    });
                     parent
                         .spawn_bundle(NodeBundle {
                             style: Style {
-                                size: Size::new(Val::Percent(100.), Val::Auto),
-                                justify_content: JustifyContent::Center,
-                                align_items: AlignItems::Center,
+                                justify_content: JustifyContent::SpaceAround,
+                                flex_basis: Val::Percent(2. / 3.),
+                                flex_grow: 2. / 3.,
+                                flex_shrink: 0.,
                                 ..default()
                             },
                             color: Color::NONE.into(),
                             ..default()
                         })
                         .with_children(|parent| {
-                            parent.spawn_bundle(TextBundle {
-                                text: Text::with_section(
-                                    "Snakes!",
-                                    TextStyle {
-                                        font: saira.clone(),
-                                        font_size: 32.,
-                                        color: Color::BLACK,
-                                    },
-                                    TextAlignment {
-                                        vertical: VerticalAlign::Center,
-                                        horizontal: HorizontalAlign::Center,
-                                    },
-                                ),
-                                ..default()
-                            });
-                        });
-
-                    // Scoreboard
-                    parent
-                        .spawn_bundle(NodeBundle {
-                            style: Style {
-                                flex_direction: FlexDirection::ColumnReverse,
-                                margin: Rect::all(Val::Px(10.)),
-                                ..default()
-                            },
-                            color: Color::NONE.into(),
-                            ..default()
-                        })
-                        .with_children(|parent| {
-                            // Header
-                            parent
-                                .spawn_bundle(NodeBundle {
-                                    style: Style {
-                                        size: Size::new(Val::Percent(100.), Val::Auto),
-                                        flex_direction: FlexDirection::Row,
-                                        flex_basis: Val::Px(0.),
-                                        justify_content: JustifyContent::FlexEnd,
-                                        ..default()
-                                    },
-                                    color: Color::NONE.into(),
-                                    ..default()
-                                })
-                                .with_children(|parent| {
-                                    // Header: Stats
-                                    parent
-                                        .spawn_bundle(NodeBundle {
-                                            style: Style {
-                                                justify_content: JustifyContent::SpaceEvenly,
-                                                flex_basis: Val::Percent(50.0),
-                                                ..default()
-                                            },
-                                            color: Color::NONE.into(),
-                                            ..default()
-                                        })
-                                        .with_children(|parent| {
-                                            parent
-                                                .spawn_bundle(NodeBundle {
-                                                    style: Style {
-                                                        flex_basis: Val::Px(0.),
-                                                        flex_grow: 1.,
-                                                        justify_content: JustifyContent::Center,
-                                                        ..default()
-                                                    },
-                                                    color: Color::NONE.into(),
-                                                    ..default()
-                                                })
-                                                .with_children(|parent| {
-                                                    parent.spawn_bundle(TextBundle {
-                                                        text: Text::with_section(
-                                                            "Length",
-                                                            TextStyle {
-                                                                font: saira.clone(),
-                                                                font_size: 20.,
-                                                                color: Color::BLACK,
-                                                            },
-                                                            TextAlignment {
-                                                                vertical: VerticalAlign::Center,
-                                                                horizontal: HorizontalAlign::Center,
-                                                            },
-                                                        ),
-                                                        style: Style {
-                                                            flex_basis: Val::Px(0.),
-                                                            flex_grow: 0.,
-                                                            ..default()
-                                                        },
-                                                        ..default()
-                                                    });
-                                                });
-                                            parent
-                                                .spawn_bundle(NodeBundle {
-                                                    style: Style {
-                                                        flex_basis: Val::Px(0.),
-                                                        flex_grow: 1.,
-                                                        justify_content: JustifyContent::Center,
-                                                        ..default()
-                                                    },
-                                                    color: Color::NONE.into(),
-                                                    ..default()
-                                                })
-                                                .with_children(|parent| {
-                                                    parent.spawn_bundle(TextBundle {
-                                                        text: Text::with_section(
-                                                            "Kills",
-                                                            TextStyle {
-                                                                font: saira.clone(),
-                                                                font_size: 20.,
-                                                                color: Color::BLACK,
-                                                            },
-                                                            TextAlignment {
-                                                                vertical: VerticalAlign::Center,
-                                                                horizontal: HorizontalAlign::Center,
-                                                            },
-                                                        ),
-                                                        style: Style {
-                                                            flex_basis: Val::Px(0.),
-                                                            flex_grow: 0.,
-                                                            ..default()
-                                                        },
-                                                        ..default()
-                                                    });
-                                                });
-                                            parent
-                                                .spawn_bundle(NodeBundle {
-                                                    style: Style {
-                                                        flex_basis: Val::Px(0.),
-                                                        flex_grow: 1.,
-                                                        justify_content: JustifyContent::Center,
-                                                        ..default()
-                                                    },
-                                                    color: Color::NONE.into(),
-                                                    ..default()
-                                                })
-                                                .with_children(|parent| {
-                                                    parent.spawn_bundle(TextBundle {
-                                                        text: Text::with_section(
-                                                            "Deaths",
-                                                            TextStyle {
-                                                                font: saira.clone(),
-                                                                font_size: 20.,
-                                                                color: Color::BLACK,
-                                                            },
-                                                            TextAlignment {
-                                                                vertical: VerticalAlign::Center,
-                                                                horizontal: HorizontalAlign::Center,
-                                                            },
-                                                        ),
-                                                        style: Style {
-                                                            flex_basis: Val::Px(0.),
-                                                            flex_grow: 0.,
-                                                            ..default()
-                                                        },
-                                                        ..default()
-                                                    });
-                                                });
-                                        });
-                                });
-
-                            parent
-                                .spawn_bundle(NodeBundle {
-                                    style: Style {
-                                        size: Size::new(Val::Percent(100.), Val::Auto),
-                                        margin: Rect {
-                                            top: Val::Px(15.),
+                            for stat in ["Length", "Kills", "Deaths"] {
+                                parent
+                                    .spawn_bundle(NodeBundle {
+                                        style: Style {
+                                            flex_grow: 1.,
+                                            flex_basis: Val::Px(0.),
+                                            justify_content: JustifyContent::Center,
+                                            margin: UiRect::all(Val::Px(5.)),
                                             ..default()
                                         },
-                                        flex_direction: FlexDirection::Column,
-                                        flex_basis: Val::Px(0.),
+                                        color: Color::NONE.into(),
                                         ..default()
-                                    },
-                                    color: Color::NONE.into(),
-                                    ..default()
-                                })
-                                .insert(ScoreboardUi);
-                        });
-
-                    // Pause button
-                    parent
-                        .spawn_bundle(ButtonBundle {
-                            style: Style {
-                                size: Size::new(Val::Px(150.0), Val::Px(65.0)),
-                                // center button
-                                margin: Rect::all(Val::Auto),
-                                // horizontally center child text
-                                justify_content: JustifyContent::Center,
-                                // vertically center child text
-                                align_items: AlignItems::Center,
-                                ..default()
-                            },
-                            color: NORMAL_BUTTON.into(),
-                            ..default()
-                        })
-                        .with_children(|parent| {
-                            parent.spawn_bundle(TextBundle {
-                                text: Text::with_section(
-                                    "Pause",
-                                    TextStyle {
-                                        font: asset_server.load("fonts/Saira.ttf"),
-                                        font_size: 40.0,
-                                        color: Color::rgb(0.9, 0.9, 0.9),
-                                    },
-                                    Default::default(),
-                                ),
-                                ..default()
-                            });
+                                    })
+                                    .with_children(|parent| {
+                                        parent.spawn_bundle(
+                                            TextBundle::from_section(
+                                                stat,
+                                                TextStyle {
+                                                    font: font.clone(),
+                                                    font_size: 20.,
+                                                    color: Color::BLACK,
+                                                },
+                                            )
+                                            .with_style(Style {
+                                                flex_basis: Val::Px(0.),
+                                                flex_grow: 0.,
+                                                ..default()
+                                            }),
+                                        );
+                                    });
+                            }
                         });
                 });
+            // The actual player scores
+            parent
+                .spawn_bundle(NodeBundle {
+                    style: Style {
+                        flex_direction: FlexDirection::ColumnReverse,
+                        size: Size::new(Val::Percent(100.), Val::Percent(100.)),
+                        overflow: Overflow::Hidden,
+                        ..default()
+                    },
+                    color: Color::NONE.into(),
+                    ..default()
+                })
+                .insert(ScoreboardUi);
         });
 }
 
-fn button_system(
-    mut commands: Commands,
-    current_state: Res<CurrentState<GameState>>,
-    mut interaction_query: Query<
-        (&Interaction, &mut UiColor, &Children),
-        (Changed<Interaction>, With<Button>),
-    >,
-    mut text_query: Query<&mut Text>,
-) {
-    let paused = current_state.0 == GameState::Paused;
-
-    for (interaction, mut color, children) in interaction_query.iter_mut() {
-        let mut text = text_query.get_mut(children[0]).unwrap();
-        match *interaction {
-            Interaction::Clicked => {
-                if !paused {
-                    text.sections[0].value = "Resume".to_string();
-                    commands.insert_resource(NextState(GameState::Paused));
-                } else {
-                    text.sections[0].value = "Pause".to_string();
-                    commands.insert_resource(NextState(GameState::Running));
-                }
-            }
-            Interaction::Hovered => {
-                *color = HOVERED_BUTTON.into();
-            }
-            Interaction::None => {
-                *color = NORMAL_BUTTON.into();
-            }
-        }
-    }
-}
-
-fn scoreboard_system(
+fn init_scoreboard(
     mut commands: Commands,
     ui: Query<Entity, With<ScoreboardUi>>,
     players: Res<Players>,
     asset_server: Res<AssetServer>,
 ) {
     if let Ok(scoreboard_entity) = ui.get_single() {
-        let saira = asset_server.load("fonts/Saira.ttf");
-
-        // Clear the scoreboard
+        let font = asset_server.load("fonts/Saira.ttf");
         commands.entity(scoreboard_entity).despawn_descendants();
-
-        // Sort the players
-        let mut players = players.values().collect::<Vec<_>>();
-        players.sort_by_key(|p| p.score);
-
-        // Place the players
-        for &details in players.iter() {
-            let scoreline_bundle = NodeBundle {
-                style: Style {
-                    size: Size::new(Val::Percent(100.), Val::Auto),
-                    flex_direction: FlexDirection::Row,
-                    flex_basis: Val::Px(0.),
-                    margin: Rect {
-                        bottom: Val::Px(10.),
+        for (player, details) in players.iter() {
+            // A row for each player
+            let scoreline = commands
+                .spawn_bundle(NodeBundle {
+                    style: Style {
+                        flex_direction: FlexDirection::Row,
+                        size: Size::new(Val::Percent(100.), Val::Auto),
+                        position_type: PositionType::Absolute,
+                        position: UiRect {
+                            top: Val::Px(0.),
+                            ..default()
+                        },
                         ..default()
                     },
+                    color: Color::NONE.into(),
                     ..default()
-                },
-                color: Color::NONE.into(),
-                ..default()
-            };
-
-            let section_bundle = || NodeBundle {
-                style: Style {
-                    flex_grow: 1.,
-                    align_items: AlignItems::Center,
-                    flex_basis: Val::Px(0.),
-                    ..default()
-                },
-                color: Color::NONE.into(),
-                ..default()
-            };
-
-            let scoreline = commands
-                .spawn()
-                .insert_bundle(scoreline_bundle)
+                })
+                .insert(Scoreline)
+                .insert(*player)
                 .with_children(|parent| {
+                    // Player details
                     parent
-                        .spawn_bundle(section_bundle())
+                        .spawn_bundle(NodeBundle {
+                            style: Style {
+                                justify_content: JustifyContent::FlexStart,
+                                align_items: AlignItems::Center,
+                                flex_grow: 1.,
+                                flex_basis: Val::Px(0.),
+                                ..default()
+                            },
+                            color: Color::NONE.into(),
+                            ..default()
+                        })
                         .with_children(|parent| {
-                            // Player: Color
+                            // Player color
                             parent.spawn_bundle(NodeBundle {
                                 style: Style {
                                     size: Size::new(Val::Px(15.), Val::Px(15.)),
-                                    padding: Rect::all(Val::Px(10.)),
-                                    margin: Rect {
-                                        left: Val::Px(5.),
-                                        right: Val::Px(5.),
-                                        ..default()
-                                    },
+                                    margin: UiRect::all(Val::Px(5.)),
                                     ..default()
                                 },
                                 color: details.color.into(),
                                 ..default()
                             });
-
-                            // Player: Name
-                            parent.spawn_bundle(TextBundle {
-                                text: Text::with_section(
-                                    details.name.to_string(),
-                                    TextStyle {
-                                        font: saira.clone(),
-                                        font_size: 24.,
-                                        color: Color::BLACK,
-                                    },
-                                    TextAlignment {
-                                        vertical: VerticalAlign::Center,
-                                        horizontal: HorizontalAlign::Center,
-                                    },
-                                ),
-                                ..default()
-                            });
+                            // Player name
+                            parent
+                                .spawn_bundle(NodeBundle {
+                                    style: Style { ..default() },
+                                    color: Color::NONE.into(),
+                                    ..default()
+                                })
+                                .with_children(|parent| {
+                                    parent.spawn_bundle(TextBundle::from_section(
+                                        details.name.to_string(),
+                                        TextStyle {
+                                            font: font.clone(),
+                                            font_size: 20.,
+                                            color: Color::BLACK,
+                                        },
+                                    ));
+                                });
                         });
 
-                    let stat_bundle = || NodeBundle {
-                        style: Style {
-                            flex_basis: Val::Px(0.),
-                            flex_grow: 1.,
-                            justify_content: JustifyContent::Center,
-                            ..default()
-                        },
-                        color: Color::NONE.into(),
-                        ..default()
-                    };
-
-                    let stat_text = |value| TextBundle {
-                        text: Text::with_section(
-                            value,
-                            TextStyle {
-                                font: saira.clone(),
-                                font_size: 20.,
-                                color: Color::BLACK,
-                            },
-                            TextAlignment {
-                                vertical: VerticalAlign::Center,
-                                horizontal: HorizontalAlign::Center,
-                            },
-                        ),
-                        style: Style {
-                            flex_basis: Val::Px(0.),
-                            flex_grow: 0.,
-                            ..default()
-                        },
-                        ..default()
-                    };
-
-                    // Player: Stats
                     parent
-                        .spawn_bundle(section_bundle())
+                        .spawn_bundle(NodeBundle {
+                            style: Style {
+                                justify_content: JustifyContent::SpaceAround,
+                                align_items: AlignItems::Center,
+                                flex_grow: 2.,
+                                flex_basis: Val::Px(0.),
+                                flex_shrink: 0.,
+                                ..default()
+                            },
+                            color: Color::NONE.into(),
+                            ..default()
+                        })
                         .with_children(|parent| {
-                            parent.spawn_bundle(stat_bundle()).with_children(|parent| {
-                                parent.spawn_bundle(stat_text(format!(
-                                    "{:3}/{:03}",
+                            // This is an ugly hack to make the code smaller
+                            let stats = [
+                                format!(
+                                    "{}/{}",
                                     details.score.current_length, details.score.max_length
-                                )));
-                            });
-                            parent.spawn_bundle(stat_bundle()).with_children(|parent| {
-                                parent.spawn_bundle(stat_text(format!("{}", details.score.kills)));
-                            });
-                            parent.spawn_bundle(stat_bundle()).with_children(|parent| {
-                                parent.spawn_bundle(stat_text(format!("{}", details.score.deaths)));
-                            });
+                                ),
+                                details.score.kills.to_string(),
+                                details.score.deaths.to_string(),
+                            ];
+                            for stat in stats {
+                                parent
+                                    .spawn_bundle(NodeBundle {
+                                        style: Style {
+                                            flex_grow: 1.,
+                                            flex_basis: Val::Px(0.),
+                                            justify_content: JustifyContent::Center,
+                                            margin: UiRect::all(Val::Px(5.)),
+                                            ..default()
+                                        },
+                                        color: Color::NONE.into(),
+                                        ..default()
+                                    })
+                                    .with_children(|parent| {
+                                        parent.spawn_bundle(
+                                            TextBundle::from_section(
+                                                stat,
+                                                TextStyle {
+                                                    font: font.clone(),
+                                                    font_size: 20.,
+                                                    color: Color::BLACK,
+                                                },
+                                            )
+                                            .with_style(Style {
+                                                flex_basis: Val::Px(0.),
+                                                flex_grow: 0.,
+                                                ..default()
+                                            }),
+                                        );
+                                    });
+                            }
                         });
                 })
                 .id();
@@ -521,55 +407,171 @@ fn scoreboard_system(
     }
 }
 
+fn update_scoreboard(
+    mut commands: Commands,
+    scorelines: Query<(Entity, &Style, &Node, &Children, &PlayerId), With<Scoreline>>,
+    mut text: Query<&mut Text>,
+    all_children: Query<&Children>,
+    players: Res<Players>,
+) {
+    let mut scorelines = scorelines.iter().collect::<Vec<_>>();
+    scorelines.sort_by(|(_, _, _, _, a), (_, _, _, _, b)| {
+        let player_a = players.get(*a).unwrap();
+        let player_b = players.get(*b).unwrap();
+        player_a
+            .score
+            .cmp(&player_b.score)
+            .then_with(|| (*b).cmp(*b))
+            .reverse()
+    });
+
+    for (rank, (entity, style, node, children, player_id)) in scorelines.into_iter().enumerate() {
+        let new_y = Val::Px(node.size.y * rank as f32);
+
+        let new_style = Style {
+            position: UiRect {
+                top: new_y,
+                ..style.position
+            },
+            ..*style
+        };
+        commands.entity(entity).insert(style.clone().ease_to(
+            new_style,
+            EaseFunction::QuadraticOut,
+            EasingType::Once {
+                duration: Duration::from_millis(100),
+            },
+        ));
+
+        // The children of the scoreline are [player details, stats]
+        // we only want the stats
+        if let Some(stats) = children.get(1) {
+            // the children of the stats are [length, kills, deaths]
+            if let Ok(stat_children) = all_children.get(*stats) {
+                let score = players
+                    .get(player_id)
+                    .expect("Player details not found")
+                    .score;
+
+                let &length_wrapper = stat_children.get(0).unwrap();
+                let length = all_children.get(length_wrapper).unwrap();
+                if let Ok(mut length_text) = text.get_mut(*length.get(0).unwrap()) {
+                    length_text.sections[0].value =
+                        format!("{:3}/{:3}", score.current_length, score.max_length);
+                }
+
+                let &kills_wrapper = stat_children.get(1).unwrap();
+                let kills = all_children.get(kills_wrapper).unwrap();
+                if let Ok(mut kills_text) = text.get_mut(*kills.get(0).unwrap()) {
+                    kills_text.sections[0].value = score.kills.to_string();
+                }
+
+                let &deaths_wrapper = stat_children.get(2).unwrap();
+                let deaths = all_children.get(deaths_wrapper).unwrap();
+                if let Ok(mut deaths_text) = text.get_mut(*deaths.get(0).unwrap()) {
+                    deaths_text.sections[0].value = score.deaths.to_string();
+                }
+            }
+        }
+    }
+}
+
+// Button types
+#[derive(Component)]
+struct PauseButton;
+
+const BUTTON_NORMAL: Color = Color::rgb(0.35, 0.35, 0.35);
+const BUTTON_HOVER: Color = Color::rgb(0.45, 0.45, 0.45);
+const BUTTON_CLICK: Color = Color::rgb(0.25, 0.25, 0.25);
+
+// A generic run condition that activates when the button type is clicked
+fn button_clicked<B: Component>(
+    query: Query<&Interaction, (Changed<Interaction>, With<Button>, With<B>)>,
+) -> bool {
+    for interaction in query.iter() {
+        if *interaction == Interaction::Clicked {
+            return true;
+        }
+    }
+
+    false
+}
+
+fn button_interactions(
+    mut query: Query<(&Interaction, &mut UiColor), (Changed<Interaction>, With<Button>)>,
+) {
+    for (interaction, mut color) in query.iter_mut() {
+        match interaction {
+            Interaction::Clicked => *color = UiColor(BUTTON_CLICK),
+            Interaction::Hovered => *color = UiColor(BUTTON_HOVER),
+            Interaction::None => *color = UiColor(BUTTON_NORMAL),
+        }
+    }
+}
+
+fn toggle_pause(mut commands: Commands, current_state: Res<CurrentState<GameState>>) {
+    if current_state.0 == GameState::Running {
+        commands.insert_resource(NextState(GameState::Paused));
+    } else {
+        commands.insert_resource(NextState(GameState::Running));
+    }
+}
+
+fn pause_button_text(
+    pause_buttons: Query<&Children, (With<Button>, With<PauseButton>)>,
+    mut text: Query<&mut Text, With<Parent>>,
+    current_state: Res<CurrentState<GameState>>,
+) {
+    for children in pause_buttons.iter() {
+        let mut text = text.get_mut(children[0]).unwrap();
+        if current_state.0 == GameState::Paused {
+            text.sections[0].value = "Resume".to_string();
+        } else {
+            text.sections[0].value = "Pause".to_string();
+        }
+    }
+}
+
+fn spawn_playback_controls(parent: &mut ChildBuilder, font: Handle<Font>) {
+    parent
+        .spawn_bundle(ButtonBundle {
+            style: Style {
+                size: Size::new(Val::Px(150.0), Val::Px(65.0)),
+                // center button
+                margin: UiRect::all(Val::Auto),
+                // horizontally center child text
+                justify_content: JustifyContent::Center,
+                // vertically center child text
+                align_items: AlignItems::Center,
+                ..default()
+            },
+            color: BUTTON_NORMAL.into(),
+            ..default()
+        })
+        .insert(PauseButton)
+        .with_children(|parent| {
+            parent.spawn_bundle(TextBundle {
+                text: Text::from_section(
+                    "Pause",
+                    TextStyle {
+                        font: font.clone(),
+                        font_size: 40.0,
+                        color: Color::rgb(0.9, 0.9, 0.9),
+                    },
+                ),
+                ..default()
+            });
+        });
+}
+
 fn add_rendering(app: &mut App) {
     app.add_system_set_to_stage(
         CoreStage::PostUpdate,
         SystemSet::new()
             .label("rendering")
-            .with_system(color_players)
             .with_system(color_food)
             .with_system(draw_grid_objects),
     );
-
-    #[cfg(debug_assertions)]
-    app.add_startup_system(add_debug_grid);
-}
-
-fn add_debug_grid(mut commands: Commands, grid: Option<Res<GameGrid>>) {
-    if let Some(grid) = grid {
-        for x in 0..grid.width {
-            for y in 0..grid.height {
-                let color = if (x + y) % 2 == 0 {
-                    Color::WHITE * 0.1
-                } else {
-                    Color::WHITE * 0.3
-                };
-                // let color = Color::WHITE * 0.1;
-                commands
-                    .spawn_bundle(SpriteBundle {
-                        sprite: Sprite { color, ..default() },
-                        transform: Transform::from_xyz(0., 0., 0.),
-                        ..default()
-                    })
-                    .insert(GridPosition::new(x as i32, y as i32))
-                    .insert(GridScale::square(0.95));
-            }
-        }
-    }
-}
-
-fn color_players(
-    mut player_objects: Query<(&PlayerId, &mut Sprite, Option<&Snake>)>,
-    players: Res<Players>,
-) {
-    for (player, mut sprite, head) in player_objects.iter_mut() {
-        if let Some(details) = players.get(player) {
-            sprite.color = details.color;
-            if head.is_none() {
-                sprite.color *= 0.6;
-            }
-        }
-    }
 }
 
 fn color_food(mut foods: Query<(&mut Sprite, &mut GridScale, &Food)>) {
@@ -584,6 +586,7 @@ fn color_food(mut foods: Query<(&mut Sprite, &mut GridScale, &Food)>) {
         let alpha = food.get_factor() * 0.5 + 0.5;
 
         let color = lerp(Color::GREEN, Color::RED, alpha);
+
         sprite.color = color;
 
         let size = lerp(0.6, 0.3, alpha);
@@ -599,35 +602,34 @@ fn draw_grid_objects(
     windows: Res<Windows>,
 ) {
     if let Ok((node, transform)) = arena.get_single() {
-        let window = windows.get_primary().unwrap();
+        if let Some(window) = windows.get_primary() {
+            let window_size = Vec2::new(window.width(), window.height());
+            let node_size = Vec2::new(node.size.x, node.size.y);
 
-        let window_size = Vec2::new(window.width(), window.height());
-        let node_size = Vec2::new(node.size.x, node.size.y);
+            let cell_size = f32::min(
+                node_size.x / grid.width as f32,
+                node_size.y / grid.height as f32,
+            );
+            let cell_offset = 0.5 * cell_size;
 
-        let cell_size = f32::min(
-            node_size.x / grid.width as f32,
-            node_size.y / grid.height as f32,
-        );
-        let cell_offset = 0.5 * cell_size;
+            let grid_size = Vec2::new(grid.width as f32, grid.height as f32) * cell_size;
+            let grid_offset = transform.translation().xy() - 0.5 * (window_size + grid_size);
 
-        let grid_size = Vec2::new(grid.width as f32, grid.height as f32) * cell_size;
-        let grid_offset = transform.translation.xy() - 0.5 * (window_size + grid_size);
+            for (pos, scale, mut transform) in objects.iter_mut() {
+                // Scale the sprite based on the grid size and window size
+                transform.scale = Vec3::new(scale.x * cell_size, scale.y * cell_size, 1.0);
 
-        for (pos, scale, mut transform) in objects.iter_mut() {
-            // Scale the sprite based on the grid size and window size
-            transform.scale = Vec3::new(scale.x * cell_size, scale.y * cell_size, 1.0);
+                // Translate the sprite based on the grid size and window size
+                let x = pos.x as f32 * cell_size + cell_offset + grid_offset.x;
+                let y = pos.y as f32 * cell_size + cell_offset + grid_offset.y;
 
-            // Translate the sprite based on the grid size and window size
-            let x = pos.x as f32 * cell_size + cell_offset + grid_offset.x;
-            let y = pos.y as f32 * cell_size + cell_offset + grid_offset.y;
-
-            transform.translation.x = x;
-            transform.translation.y = y;
+                transform.translation.x = x;
+                transform.translation.y = y;
+            }
         }
     }
 }
 
 fn setup_cameras(mut commands: Commands) {
-    commands.spawn_bundle(OrthographicCameraBundle::new_2d());
-    commands.spawn_bundle(UiCameraBundle::default());
+    commands.spawn_bundle(Camera2dBundle::default());
 }

@@ -1,6 +1,10 @@
 use bevy::{
-    prelude::{default, Bundle, Color, Component, Entity},
-    sprite::SpriteBundle,
+    prelude::{
+        default, Bundle, Component, ComputedVisibility, Entity, GlobalTransform, Handle, Image,
+        Transform, Visibility,
+    },
+    render::texture::DEFAULT_IMAGE_HANDLE,
+    sprite::Sprite,
 };
 
 use crate::game::{
@@ -34,31 +38,42 @@ impl Snake {
 #[derive(Bundle)]
 pub struct SnakeBundle {
     // Snake things
-    _snake: Snake,
-    _segment: SnakeSegment,
+    snake: Snake,
+    segment: SnakeSegment,
 
     // Game things
-    _collidable: Collidable,
-    _actor: Actor,
+    collidable: Collidable,
+    actor: Actor,
 
     // Grid things
-    _position: GridPosition,
-    _scale: GridScale,
+    position: GridPosition,
+    scale: GridScale,
 
     // Rendering things
-    #[bundle]
-    _sprite: SpriteBundle,
+    pub sprite: Sprite,
+    pub transform: Transform,
+    pub global_transform: GlobalTransform,
+    pub texture: Handle<Image>,
+    /// User indication of whether an entity is visible
+    pub visibility: Visibility,
+    /// Algorithmically-computed indication of whether an entity is visible and should be extracted for rendering
+    pub computed_visibility: ComputedVisibility,
 }
 impl SnakeBundle {
     pub fn new(position: GridPosition) -> Self {
         Self {
-            _snake: Snake::new(),
-            _segment: SnakeSegment,
-            _collidable: Collidable,
-            _actor: Actor,
-            _position: position,
-            _scale: GridScale::square(0.7),
-            _sprite: SpriteBundle::default(),
+            snake: Snake::new(),
+            segment: SnakeSegment,
+            collidable: Collidable,
+            actor: Actor,
+            position,
+            scale: GridScale::square(0.7),
+            sprite: default(),
+            transform: default(),
+            global_transform: default(),
+            texture: DEFAULT_IMAGE_HANDLE.typed(),
+            visibility: default(),
+            computed_visibility: default(),
         }
     }
 }
@@ -69,33 +84,38 @@ pub struct SnakeSegment;
 #[derive(Bundle)]
 pub struct SegmentBundle {
     // Snake things
-    _segment: SnakeSegment,
+    pub segment: SnakeSegment,
 
     // Game things
-    _collidable: Collidable,
+    pub collidable: Collidable,
 
     // Grid things
-    _position: GridPosition,
-    _scale: GridScale,
+    pub position: GridPosition,
+    pub scale: GridScale,
 
     // Rendering things
-    #[bundle]
-    _sprite: SpriteBundle,
+    pub sprite: Sprite,
+    pub transform: Transform,
+    pub global_transform: GlobalTransform,
+    pub texture: Handle<Image>,
+    /// User indication of whether an entity is visible
+    pub visibility: Visibility,
+    /// Algorithmically-computed indication of whether an entity is visible and should be extracted for rendering
+    pub computed_visibility: ComputedVisibility,
 }
 impl SegmentBundle {
     pub fn new(position: GridPosition) -> Self {
         Self {
-            _segment: SnakeSegment,
-            _collidable: Collidable,
-            _position: position,
-            _scale: GridScale::square(0.6),
-            _sprite: SpriteBundle {
-                sprite: bevy::sprite::Sprite {
-                    color: Color::rgb(0.6, 0.6, 0.6),
-                    ..default()
-                },
-                ..default()
-            },
+            segment: SnakeSegment,
+            collidable: Collidable,
+            position,
+            scale: GridScale::square(0.6),
+            sprite: default(),
+            transform: default(),
+            global_transform: default(),
+            texture: DEFAULT_IMAGE_HANDLE.typed(),
+            visibility: default(),
+            computed_visibility: default(),
         }
     }
 }
