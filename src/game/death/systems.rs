@@ -33,6 +33,7 @@ pub fn death_system(
             // Update scores
             if let Ok(&player) = player_ids.get(target) {
                 if let Some(details) = players.get_mut(&player) {
+                    details.is_dead = true;
                     details.score.deaths += 1;
                 }
 
@@ -71,7 +72,7 @@ pub fn respawn_system(
     mut respawns: Query<(Entity, &mut RngComponent, Option<&PlayerId>), With<Respawning>>,
     occupied: Query<&GridPosition, With<Collidable>>,
     grid: Res<GameGrid>,
-    players: Res<Players>,
+    mut players: ResMut<Players>,
 ) {
     for (e, mut rng, player) in respawns.iter_mut() {
         let rng = rng.get_mut();
@@ -80,9 +81,11 @@ pub fn respawn_system(
 
         let mut bundle = SnakeBundle::new(position);
         if let Some(player) = player {
-            let details = players.get(player).expect("The player should exist");
+            let mut details = players.get_mut(player).expect("The player should exist");
             bundle.sprite.color = details.color;
             entity.insert(*player);
+
+            details.is_dead = false;
         }
         entity.remove::<Respawning>().insert_bundle(bundle);
     }

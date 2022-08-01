@@ -27,4 +27,5 @@ pub struct PlayerDetails {
     pub color: Color,
     pub score: Score,
     pub player_type: PlayerType,
+    pub is_dead: bool,
 }

@@ -12,7 +12,7 @@ use bevy::{
     prelude::{
         default, App, Color, Commands, CoreStage, Plugin, Query, Res, SystemSet, Transform, *,
     },
-    render::RenderPlugin,
+    render::{texture::ImageSettings, RenderPlugin},
     sprite::{Sprite, SpritePlugin},
     text::TextPlugin,
     transform::TransformPlugin,
@@ -44,7 +44,8 @@ impl Plugin for HeadfulPlugin {
                 height: 600.,
                 title: "Snakes!".to_string(),
                 ..default()
-            });
+            })
+            .insert_resource(ImageSettings::default_nearest());
 
         app.add_plugin(InputPlugin::default())
             .add_plugin(HierarchyPlugin::default())
@@ -316,15 +317,29 @@ fn init_scoreboard(
                         })
                         .with_children(|parent| {
                             // Player color
-                            parent.spawn_bundle(NodeBundle {
-                                style: Style {
-                                    size: Size::new(Val::Px(15.), Val::Px(15.)),
-                                    margin: UiRect::all(Val::Px(5.)),
+                            parent
+                                .spawn_bundle(NodeBundle {
+                                    style: Style {
+                                        size: Size::new(Val::Px(20.), Val::Px(20.)),
+                                        margin: UiRect::all(Val::Px(5.)),
+                                        align_items: AlignItems::Center,
+                                        justify_content: JustifyContent::Center,
+                                        ..default()
+                                    },
+                                    color: details.color.into(),
                                     ..default()
-                                },
-                                color: details.color.into(),
-                                ..default()
-                            });
+                                })
+                                .with_children(|parent| {
+                                    parent.spawn_bundle(ImageBundle {
+                                        image: asset_server.load("textures/dead.png").into(),
+                                        style: Style {
+                                            size: Size::new(Val::Percent(90.), Val::Percent(90.)),
+                                            ..default()
+                                        },
+                                        color: Color::NONE.into(), // Hidden by default (via 100% opacity)
+                                        ..default()
+                                    });
+                                });
                             // Player name
                             parent
                                 .spawn_bundle(NodeBundle {
@@ -410,7 +425,8 @@ fn init_scoreboard(
 fn update_scoreboard(
     mut commands: Commands,
     scorelines: Query<(Entity, &Style, &Node, &Children, &PlayerId), With<Scoreline>>,
-    mut text: Query<&mut Text>,
+    mut text: Query<&mut Text, With<Parent>>,
+    icons: Query<&UiColor, (With<UiImage>, With<Parent>)>,
     all_children: Query<&Children>,
     players: Res<Players>,
 ) {
@@ -444,7 +460,31 @@ fn update_scoreboard(
         ));
 
         // The children of the scoreline are [player details, stats]
-        // we only want the stats
+        if let Some(details) = children.get(0) {
+            // children of the details are [player color, player name]
+            if let Ok(detail_children) = all_children.get(*details) {
+                if let Some(color) = detail_children.get(0) {
+                    let color_children = all_children.get(*color).unwrap();
+                    if let Some(dead_icon) = color_children.get(0) {
+                        let color = icons.get(*dead_icon).unwrap();
+                        let new_color = if players.get(player_id).unwrap().is_dead {
+                            Color::WHITE
+                        } else {
+                            Color::NONE
+                        };
+
+                        commands.entity(*dead_icon).insert(color.ease_to(
+                            UiColor(new_color),
+                            EaseFunction::QuadraticInOut,
+                            EasingType::Once {
+                                duration: Duration::from_millis(75),
+                            },
+                        ));
+                    }
+                }
+            }
+        }
+
         if let Some(stats) = children.get(1) {
             // the children of the stats are [length, kills, deaths]
             if let Ok(stat_children) = all_children.get(*stats) {

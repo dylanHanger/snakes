@@ -137,6 +137,7 @@ impl<'de> Deserialize<'de> for GameConfig {
                                 player_type: player_wrapper.player_type.clone(),
                                 color: default_colors[id % default_colors.len()],
                                 score: default(),
+                                is_dead: true,
                             },
                         )
                     })
