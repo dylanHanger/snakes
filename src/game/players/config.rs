@@ -10,6 +10,7 @@ use super::prelude::Score;
 pub enum PlayerType {
     Custom {
         executable: String,
+        #[serde(default)]
         args: Vec<String>,
     },
     Builtin {
