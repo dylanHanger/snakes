@@ -73,7 +73,7 @@ jobs:
       - name: Packaging final binary
         shell: bash
         run: |
-          cd target/${{ matrix.job.target }}/release
+          BINARY_PATH=target/${{ matrix.job.target }}/release
           ####### reduce binary size by removing debug symbols #######
           echo "Stripping binary"
           BINARY_NAME=snakes${{ matrix.job.bin-postfix }}
@@ -82,11 +82,11 @@ jobs:
           else
             GCC_PREFIX=""
           fi
-          "$GCC_PREFIX"strip $BINARY_NAME
+          "$GCC_PREFIX"strip $BINARY_PATH/$BINARY_NAME
           ########## create tar.gz ##########
           echo "Archiving binary"
           RELEASE_NAME=snakes-${GITHUB_REF/refs\/tags\//}-${{ matrix.job.os-name }}-${{ matrix.job.arch }}
-          tar czvf $RELEASE_NAME.tar.gz $BINARY_NAME
+          tar czvf $RELEASE_NAME.tar.gz assets -C $BINARY_PATH $BINARY_NAME
           ########## create sha256 ##########
           echo "Creating hash"
           if [[ ${{ runner.os }} == 'Windows' ]]; then

@@ -31,7 +31,7 @@ use crate::game::{
     grid::prelude::{GameGrid, GridPosition, GridScale},
     input::prelude::keyboard_moves_system,
     players::prelude::{PlayerId, Players},
-    turns::prelude::TurnStage,
+    turns::prelude::{Turn, TurnStage},
     GameState,
 };
 
@@ -60,6 +60,15 @@ impl Plugin for HeadfulPlugin {
             .add_plugin(UiPlugin::default())
             .add_plugin(EasingsPlugin);
 
+        #[cfg(debug_assertions)]
+        {
+            use bevy_inspector_egui::widgets::InspectorQuery;
+
+            type RootUINode = InspectorQuery<Entity, (With<Node>, Without<Parent>)>;
+
+            app.add_plugin(bevy_inspector_egui::InspectorPlugin::<RootUINode>::new());
+        }
+
         // Add everything related to displaying the game
         add_rendering(app);
 
@@ -81,6 +90,7 @@ fn add_ui(app: &mut App) {
     app.add_startup_system(setup_ui)
         .add_startup_system_to_stage(StartupStage::PostStartup, init_scoreboard)
         .add_system(update_scoreboard)
+        .add_system(update_progress_bar)
         .add_system_set(
             ConditionSet::new()
                 .with_system(button_interactions)
@@ -136,9 +146,54 @@ fn setup_ui(mut commands: Commands, asset_server: Res<AssetServer>) {
                 .with_children(|parent| {
                     spawn_sidebar_header(parent, asset_server.load("fonts/Saira.ttf"));
                     spawn_scoreboard(parent, asset_server.load("fonts/Saira.ttf"));
+                    spawn_progress_bar(parent);
                     spawn_playback_controls(parent, asset_server.load("fonts/Saira.ttf"));
                 });
         });
+}
+
+#[derive(Component)]
+struct TurnProgressBar;
+
+fn spawn_progress_bar(parent: &mut ChildBuilder) {
+    parent
+        .spawn_bundle(NodeBundle {
+            style: Style {
+                size: Size::new(Val::Percent(100.0), Val::Px(30.)),
+                align_items: AlignItems::Center,
+                padding: UiRect::all(Val::Px(2.)),
+                margin: UiRect {
+                    bottom: Val::Px(10.),
+                    ..default()
+                },
+                ..default()
+            },
+            color: Color::rgb(0.6, 0.6, 0.6).into(),
+            ..default()
+        })
+        .with_children(|parent| {
+            // Bar (fills up)
+            parent
+                .spawn_bundle(NodeBundle {
+                    style: Style {
+                        size: Size::new(Val::Percent(43.), Val::Percent(100.)),
+                        ..default()
+                    },
+                    color: Color::rgb(0.3, 0.3, 0.3).into(),
+                    ..default()
+                })
+                .insert(TurnProgressBar);
+        });
+}
+
+fn update_progress_bar(
+    mut progress_bar: Query<&mut Style, With<TurnProgressBar>>,
+    turn: Res<Turn>,
+) {
+    let progress = 100. * (turn.current as f32 / turn.max as f32);
+    if let Ok(mut progress_bar) = progress_bar.get_single_mut() {
+        progress_bar.size.width = Val::Percent(progress);
+    }
 }
 
 fn spawn_sidebar_header(parent: &mut ChildBuilder, font: Handle<Font>) {
@@ -437,7 +492,7 @@ fn update_scoreboard(
         player_a
             .score
             .cmp(&player_b.score)
-            .then_with(|| (*b).cmp(*b))
+            .then_with(|| (*b).cmp(*a))
             .reverse()
     });
 
