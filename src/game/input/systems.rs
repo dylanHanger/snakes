@@ -73,7 +73,6 @@ pub fn kill_external_agents(mut commands: Commands, agents: Query<Entity, With<C
 
 pub fn init_external_agents(agents: Query<(&CustomAi, &PlayerId)>, grid: Res<GameGrid>) {
     for (agent, player) in agents.iter() {
-        println!("Starting game");
         // The game size
         agent.send(format!("{} {}\n", grid.width, grid.height));
 
