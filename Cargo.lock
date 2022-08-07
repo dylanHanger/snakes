@@ -228,15 +228,9 @@ dependencies = [
 
 [[package]]
 name = "bevy-inspector-egui"
-version = "0.11.0"
+version = "0.12.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "a758d0cf2b972292038bebef85005986c94a6545e36d73495937eb53216186f0"
-replace = "bevy-inspector-egui 0.11.0 (git+https://github.com/Sheepyhead/bevy-inspector-egui?branch=bevy-0.8)"
-
-[[package]]
-name = "bevy-inspector-egui"
-version = "0.11.0"
-source = "git+https://github.com/Sheepyhead/bevy-inspector-egui?branch=bevy-0.8#6d52eed660676a529126e996fe8b3e54ed7c859c"
+checksum = "f0c53ed1cad011e33ea145d2c1f649a966e7457453f3768ddff39bc5064bd525"
 dependencies = [
  "bevy",
  "bevy-inspector-egui-derive",
@@ -247,8 +241,9 @@ dependencies = [
 
 [[package]]
 name = "bevy-inspector-egui-derive"
-version = "0.11.0"
-source = "git+https://github.com/Sheepyhead/bevy-inspector-egui?branch=bevy-0.8#6d52eed660676a529126e996fe8b3e54ed7c859c"
+version = "0.12.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "48ef6260a46924d40781bcb9da157c110d5166bbd573795e4a16f2505913d0d0"
 dependencies = [
  "proc-macro2",
  "quote",
@@ -3161,7 +3156,7 @@ name = "snakes"
 version = "0.4.1"
 dependencies = [
  "bevy",
- "bevy-inspector-egui 0.11.0 (registry+https://github.com/rust-lang/crates.io-index)",
+ "bevy-inspector-egui",
  "bevy_easings",
  "bevy_turborand",
  "clap",

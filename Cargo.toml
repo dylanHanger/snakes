@@ -8,7 +8,7 @@ license = "Apache-2.0"
 
 [dependencies]
 bevy = { version = "0.8.0", features = ["wayland", "serialize"] }
-bevy-inspector-egui = "0.11.0"
+bevy-inspector-egui = "0.12.0"
 bevy_easings = { version = "0.8.0", features = ["ui"] }
 bevy_turborand = "0.2.0"
 clap = { version = "3.2.15", features = ["derive"] }
@@ -18,9 +18,6 @@ rand = "0.8.5"
 serde = { version = "1.0.140", features = ["derive"] }
 serde_yaml = "0.9.1"
 wait-timeout = "0.2.0"
-
-[replace]
-"bevy-inspector-egui:0.11.0" = { git = "https://github.com/Sheepyhead/bevy-inspector-egui", branch = "bevy-0.8"}
 
 # Enable a small amount of optimization in debug mode
 [profile.dev]
