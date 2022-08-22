@@ -25,25 +25,34 @@ pub struct KeyboardInput {
 
 #[derive(Component)]
 pub struct CustomAi {
-    sender: Sender<String>,
-    receiver: Receiver<String>,
+    stdin: Sender<String>,
+    stdout: Receiver<String>,
+    stderr: Receiver<String>,
     child: Child,
+
+    pub silent: bool,
 }
 impl CustomAi {
-    fn spawn_comms_threads(child: &mut Child, sender: Sender<String>, receiver: Receiver<String>) {
+    fn spawn_comms_threads(
+        child: &mut Child,
+        output: Sender<String>,
+        input: Receiver<String>,
+        err: Sender<String>,
+    ) {
         let mut stdin = child.stdin.take().unwrap();
         let stdout = child.stdout.take().unwrap();
+        let stderr = child.stderr.take().unwrap();
 
         // Spawn a thread to TALK to the process
         thread::spawn(move || {
-            for line in receiver {
+            for line in input {
                 if stdin.write_all(line.as_bytes()).is_err() {
                     return;
                 }
             }
         });
 
-        // Spawn a thread to LISTEN to the process
+        // Spawn a thread to LISTEN to the process stdout
         thread::spawn(move || {
             let mut f = BufReader::new(stdout);
 
@@ -51,42 +60,61 @@ impl CustomAi {
                 let mut buf = String::new();
                 if f.read_line(&mut buf).is_ok() {
                     let msg = buf.trim().to_string();
-                    sender.send(msg).unwrap_or_default();
-                } else {
-                    return;
+                    output.send(msg).unwrap_or_default();
+                }
+            }
+        });
+
+        // Spawn a thread to LISTEN to the process stderr
+        thread::spawn(move || {
+            let mut stderr_reader = BufReader::new(stderr);
+
+            loop {
+                // Stderr
+                let mut buf = String::new();
+                if stderr_reader.read_line(&mut buf).is_ok() {
+                    let msg = buf.trim().to_string();
+                    err.send(msg).unwrap_or_default();
                 }
             }
         });
     }
 
-    pub fn new(command: String, args: Vec<String>) -> Self {
+    pub fn new(command: String, args: Vec<String>, silent: bool) -> Self {
         let (tx1, rx1) = unbounded();
         let (tx2, rx2) = unbounded();
+        let (tx3, rx3) = unbounded();
 
         let mut child = Command::new(&command)
             .args(args)
             .stdin(Stdio::piped())
             .stdout(Stdio::piped())
+            .stderr(Stdio::piped())
             .spawn()
             .unwrap_or_else(|e| panic!("Could not spawn process {command}: {e:?}"));
 
-        Self::spawn_comms_threads(&mut child, tx1, rx2);
+        Self::spawn_comms_threads(&mut child, tx1, rx2, tx3);
         Self {
-            sender: tx2,
-            receiver: rx1,
+            stdin: tx2,
+            stdout: rx1,
+            stderr: rx3,
             child,
+            silent,
         }
     }
 
     pub fn recv(&self) -> Option<Direction> {
-        match self.receiver.try_recv() {
+        match self.stdout.try_recv() {
             Ok(answer) => answer.parse().ok(),
             Err(_) => None,
         }
     }
+    pub fn recv_err(&self) -> Option<String> {
+        self.stderr.try_recv().ok()
+    }
 
     pub fn send(&self, msg: String) {
-        self.sender.send(msg).unwrap_or_default();
+        self.stdin.send(msg).unwrap_or_default();
     }
 }
 impl Drop for CustomAi {

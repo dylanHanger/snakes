@@ -12,6 +12,8 @@ pub enum PlayerType {
         executable: String,
         #[serde(default)]
         args: Vec<String>,
+        #[serde(default)]
+        silent: bool,
     },
     Builtin {
         difficulty: BuiltinAi,

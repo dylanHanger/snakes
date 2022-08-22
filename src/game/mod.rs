@@ -128,7 +128,8 @@ fn add_players(app: &mut App, player_details: Players) {
                 // Create the players and set them to spawn immediately
                 .with_system(setup_players),
         )
-        .add_system_to_stage(CoreStage::PostUpdate, scoreboard_system);
+        .add_system_to_stage(CoreStage::PostUpdate, scoreboard_system)
+        .add_system(external_error_system);
 }
 
 fn add_turns(app: &mut App, turn_config: TurnConfig) {

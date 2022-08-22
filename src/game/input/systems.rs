@@ -81,6 +81,16 @@ pub fn init_external_agents(agents: Query<(&CustomAi, &PlayerId)>, grid: Res<Gam
     }
 }
 
+pub fn external_error_system(agents: Query<&CustomAi>) {
+    for agent in agents.iter() {
+        if let Some(msg) = agent.recv_err() {
+            if !agent.silent {
+                println!("{}", msg);
+            }
+        }
+    }
+}
+
 pub fn request_turn_system(mut turn: ResMut<Turn>) {
     turn.requested = true;
 }

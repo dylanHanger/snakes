@@ -35,9 +35,15 @@ pub fn setup_players(
             .id();
 
         match &details.player_type {
-            PlayerType::Custom { executable, args } => commands
-                .entity(e)
-                .insert(CustomAi::new(executable.to_string(), args.to_vec())),
+            PlayerType::Custom {
+                executable,
+                args,
+                silent,
+            } => commands.entity(e).insert(CustomAi::new(
+                executable.to_string(),
+                args.to_vec(),
+                *silent,
+            )),
             PlayerType::Builtin { difficulty } => commands.entity(e).insert(*difficulty),
             PlayerType::Keyboard { keys } => commands.entity(e).insert(*keys),
             PlayerType::Random => commands.entity(e).insert(RandomAi),
