@@ -102,7 +102,7 @@ impl<'de> Deserialize<'de> for GameConfig {
         } = Mapping::deserialize(deserializer)?;
 
         let seed = seed.unwrap_or_else(|| {
-            let s = format!("{}", rand::thread_rng().gen::<u64>());
+            let s = rand::thread_rng().gen::<u64>().to_string();
             base64::encode(s)
         });
 

@@ -20,8 +20,8 @@ use bevy::{
     diagnostic::{DiagnosticsPlugin, LogDiagnosticsPlugin},
     log::LogPlugin,
     prelude::{
-        App, Commands, Component, CoreStage, IntoChainSystem, Plugin, StartupStage, SystemSet,
-        SystemStage,
+        App, Commands, Component, CoreStage, Deref, IntoChainSystem, Plugin, StartupStage,
+        SystemSet, SystemStage,
     },
 };
 use bevy_turborand::RngPlugin;
@@ -42,6 +42,9 @@ use turns::prelude::*;
 use crate::config::read_config_from_file;
 
 use self::{death::config::DeathConfig, food::config::FoodConfig, turns::config::TurnConfig};
+
+#[derive(Deref)]
+pub struct RngSeed(pub String);
 
 #[derive(Component)]
 pub struct Actor;
@@ -68,6 +71,7 @@ impl Plugin for SnakesPlugin {
         // Add stages for more fine grained control over when entities are added or removed
         add_stages(app);
 
+        app.insert_resource(RngSeed(config.seed));
         // Let the world know the size of the arena
         app.insert_resource(config.grid);
 

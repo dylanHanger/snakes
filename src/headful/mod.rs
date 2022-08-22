@@ -32,7 +32,7 @@ use crate::game::{
     input::prelude::keyboard_moves_system,
     players::prelude::{PlayerId, Players},
     turns::prelude::{Turn, TurnStage},
-    GameState,
+    GameState, RngSeed,
 };
 
 pub struct HeadfulPlugin;
@@ -96,13 +96,14 @@ fn add_ui(app: &mut App) {
                 .with_system(button_interactions)
                 .with_system(pause_button_text)
                 .with_system(toggle_pause.run_if(button_clicked::<PauseButton>))
+                .with_system(copy_seed.run_if(button_clicked::<SeedButton>))
                 .into(),
         );
 }
 #[derive(Component)]
 struct ArenaArea;
 
-fn setup_ui(mut commands: Commands, asset_server: Res<AssetServer>) {
+fn setup_ui(mut commands: Commands, asset_server: Res<AssetServer>, seed: Res<RngSeed>) {
     commands
         // Root node
         .spawn_bundle(NodeBundle {
@@ -114,6 +115,42 @@ fn setup_ui(mut commands: Commands, asset_server: Res<AssetServer>) {
             ..default()
         })
         .with_children(|parent| {
+            // Seed info
+            // FIXME: Clicking doesn't work
+            parent
+                .spawn_bundle(NodeBundle {
+                    style: Style {
+                        position_type: PositionType::Absolute,
+                        position: UiRect::all(Val::Px(0.)),
+                        ..default()
+                    },
+                    color: Color::NONE.into(),
+                    ..default()
+                })
+                .with_children(|parent| {
+                    parent
+                        .spawn_bundle(ButtonBundle {
+                            style: Style {
+                                position: UiRect::all(Val::Px(0.)),
+                                padding: UiRect::all(Val::Px(5.)),
+                                size: Size::new(Val::Undefined, Val::Undefined),
+                                ..default()
+                            },
+                            color: Color::NONE.into(),
+                            ..default()
+                        })
+                        .insert(SeedButton)
+                        .with_children(|parent| {
+                            parent.spawn_bundle(TextBundle::from_section(
+                                seed.0.to_string(),
+                                TextStyle {
+                                    font: asset_server.load("fonts/Saira.ttf"),
+                                    font_size: 20.,
+                                    color: Color::GRAY,
+                                },
+                            ));
+                        });
+                });
             // Main window
             parent
                 .spawn_bundle(NodeBundle {
@@ -573,6 +610,10 @@ fn update_scoreboard(
 
 // Button types
 #[derive(Component)]
+struct UiButton;
+#[derive(Component)]
+struct SeedButton;
+#[derive(Component)]
 struct PauseButton;
 
 const BUTTON_NORMAL: Color = Color::rgb(0.35, 0.35, 0.35);
@@ -593,7 +634,7 @@ fn button_clicked<B: Component>(
 }
 
 fn button_interactions(
-    mut query: Query<(&Interaction, &mut UiColor), (Changed<Interaction>, With<Button>)>,
+    mut query: Query<(&Interaction, &mut UiColor), (Changed<Interaction>, With<UiButton>)>,
 ) {
     for (interaction, mut color) in query.iter_mut() {
         match interaction {
@@ -602,6 +643,10 @@ fn button_interactions(
             Interaction::None => *color = UiColor(BUTTON_NORMAL),
         }
     }
+}
+
+fn copy_seed(seed: Res<RngSeed>) {
+    todo!()
 }
 
 fn toggle_pause(mut commands: Commands, current_state: Res<CurrentState<GameState>>) {
@@ -643,6 +688,7 @@ fn spawn_playback_controls(parent: &mut ChildBuilder, font: Handle<Font>) {
             color: BUTTON_NORMAL.into(),
             ..default()
         })
+        .insert(UiButton)
         .insert(PauseButton)
         .with_children(|parent| {
             parent.spawn_bundle(TextBundle {
