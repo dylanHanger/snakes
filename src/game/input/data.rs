@@ -61,6 +61,8 @@ impl CustomAi {
                 if f.read_line(&mut buf).is_ok() {
                     let msg = buf.trim().to_string();
                     output.send(msg).unwrap_or_default();
+                } else {
+                    return;
                 }
             }
         });
@@ -75,6 +77,8 @@ impl CustomAi {
                 if stderr_reader.read_line(&mut buf).is_ok() {
                     let msg = buf.trim().to_string();
                     err.send(msg).unwrap_or_default();
+                } else {
+                    return;
                 }
             }
         });
