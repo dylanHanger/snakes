@@ -7,6 +7,7 @@ license = "Apache-2.0"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
+base64 = "0.13.0"
 bevy = { version = "0.8.0", features = ["wayland", "serialize"] }
 bevy-inspector-egui = "0.12.0"
 bevy_easings = { version = "0.8.0", features = ["ui"] }

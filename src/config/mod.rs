@@ -1,9 +1,7 @@
 mod cli;
 
 use std::{
-    collections::hash_map::DefaultHasher,
     fs::File,
-    hash::{Hash, Hasher},
     io::{self, BufReader},
     path::PathBuf,
 };
@@ -12,6 +10,7 @@ use bevy::{
     prelude::{default, Color},
     utils::HashMap,
 };
+use rand::Rng;
 use serde::{Deserialize, Deserializer};
 
 use crate::game::{
@@ -55,7 +54,7 @@ pub fn read_config_from_file(path: &PathBuf) -> Result<GameConfig, ConfigError> 
 pub struct GameConfig {
     pub grid: GameGrid,
 
-    pub seed: Option<u64>,
+    pub seed: String,
 
     pub turns: TurnConfig,
     pub death: DeathConfig,
@@ -102,10 +101,9 @@ impl<'de> Deserialize<'de> for GameConfig {
             players,
         } = Mapping::deserialize(deserializer)?;
 
-        let mut h = DefaultHasher::new();
-        let seed = seed.map(|seed| {
-            seed.hash(&mut h);
-            h.finish()
+        let seed = seed.unwrap_or_else(|| {
+            let s = format!("{}", rand::thread_rng().gen::<u64>());
+            base64::encode(s)
         });
 
         let default_colors = vec![

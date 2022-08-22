@@ -10,7 +10,11 @@ pub mod turns;
 
 pub mod prelude {}
 
-use std::path::PathBuf;
+use std::{
+    collections::hash_map::DefaultHasher,
+    hash::{Hash, Hasher},
+    path::PathBuf,
+};
 
 use bevy::{
     diagnostic::{DiagnosticsPlugin, LogDiagnosticsPlugin},
@@ -54,10 +58,12 @@ impl Plugin for SnakesPlugin {
             )
         });
 
+        let mut h = DefaultHasher::new();
+        config.seed.hash(&mut h);
         app.add_plugin(DiagnosticsPlugin::default())
             .add_plugin(LogPlugin::default())
             .add_plugin(LogDiagnosticsPlugin::default())
-            .add_plugin(RngPlugin::new(config.seed));
+            .add_plugin(RngPlugin::new(Some(h.finish())));
 
         // Add stages for more fine grained control over when entities are added or removed
         add_stages(app);

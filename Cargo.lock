@@ -3155,6 +3155,7 @@ dependencies = [
 name = "snakes"
 version = "0.4.1"
 dependencies = [
+ "base64",
  "bevy",
  "bevy-inspector-egui",
  "bevy_easings",
