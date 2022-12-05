@@ -4,23 +4,20 @@ use std::{
 };
 
 use bevy::{
-    asset::AssetPlugin,
-    core_pipeline::CorePipelinePlugin,
-    hierarchy::HierarchyPlugin,
-    input::InputPlugin,
+    diagnostic::DiagnosticsPlugin,
+    log::LogPlugin,
     math::{Vec2, Vec3, Vec3Swizzles},
     prelude::{
         default, App, Color, Commands, CoreStage, Plugin, Query, Res, SystemSet, Transform, *,
     },
-    render::{texture::ImageSettings, RenderPlugin},
-    sprite::{Sprite, SpritePlugin},
-    text::TextPlugin,
-    transform::TransformPlugin,
-    ui::{UiPlugin, UiRect},
+    render::texture::ImagePlugin,
+    sprite::Sprite,
+    time::TimePlugin,
+    ui::UiRect,
     window::{WindowPlugin, Windows},
-    winit::WinitPlugin,
 };
 use bevy_easings::{Ease, EaseFunction, EasingType, EasingsPlugin};
+use copypasta::{ClipboardContext, ClipboardProvider};
 use iyes_loopless::{
     prelude::{ConditionSet, IntoConditionalSystem},
     state::{CurrentState, NextState},
@@ -38,27 +35,27 @@ use crate::game::{
 pub struct HeadfulPlugin;
 impl Plugin for HeadfulPlugin {
     fn build(&self, app: &mut bevy::prelude::App) {
-        app.insert_resource(ClearColor(Color::rgb(0.1, 0.1, 0.1)))
-            .insert_resource(WindowDescriptor {
-                width: 900.,
-                height: 600.,
-                title: "Snakes!".to_string(),
-                ..default()
-            })
-            .insert_resource(ImageSettings::default_nearest());
+        app.insert_resource(ClearColor(Color::rgb(0.1, 0.1, 0.1)));
 
-        app.add_plugin(InputPlugin::default())
-            .add_plugin(HierarchyPlugin::default())
-            .add_plugin(TransformPlugin::default())
-            .add_plugin(WindowPlugin::default())
-            .add_plugin(AssetPlugin::default())
-            .add_plugin(WinitPlugin::default())
-            .add_plugin(RenderPlugin::default())
-            .add_plugin(CorePipelinePlugin::default())
-            .add_plugin(SpritePlugin::default())
-            .add_plugin(TextPlugin::default())
-            .add_plugin(UiPlugin::default())
-            .add_plugin(EasingsPlugin);
+        app.add_plugins(
+            DefaultPlugins
+                .build()
+                .disable::<CorePlugin>()
+                .disable::<TimePlugin>()
+                .disable::<LogPlugin>()
+                .disable::<DiagnosticsPlugin>()
+                .set(WindowPlugin {
+                    window: WindowDescriptor {
+                        title: "Snakes".to_string(),
+                        width: 800.0,
+                        height: 600.0,
+                        ..default()
+                    },
+                    ..default()
+                })
+                .set(ImagePlugin::default_nearest()),
+        )
+        .add_plugin(EasingsPlugin);
 
         #[cfg(debug_assertions)]
         {
@@ -106,42 +103,40 @@ struct ArenaArea;
 fn setup_ui(mut commands: Commands, asset_server: Res<AssetServer>, seed: Res<RngSeed>) {
     commands
         // Root node
-        .spawn_bundle(NodeBundle {
+        .spawn(NodeBundle {
             style: Style {
                 size: Size::new(Val::Percent(100.0), Val::Percent(100.0)),
                 ..default()
             },
-            color: Color::NONE.into(),
             ..default()
         })
         .with_children(|parent| {
             // Seed info
-            // FIXME: Clicking doesn't work
             parent
-                .spawn_bundle(NodeBundle {
+                .spawn(NodeBundle {
                     style: Style {
                         position_type: PositionType::Absolute,
-                        position: UiRect::all(Val::Px(0.)),
+                        position: UiRect::bottom(Val::Px(0.)),
                         ..default()
                     },
-                    color: Color::NONE.into(),
+                    z_index: ZIndex::Global(1),
                     ..default()
                 })
                 .with_children(|parent| {
                     parent
-                        .spawn_bundle(ButtonBundle {
+                        .spawn(ButtonBundle {
                             style: Style {
                                 position: UiRect::all(Val::Px(0.)),
                                 padding: UiRect::all(Val::Px(5.)),
                                 size: Size::new(Val::Undefined, Val::Undefined),
                                 ..default()
                             },
-                            color: Color::NONE.into(),
+                            background_color: Color::NONE.into(),
                             ..default()
                         })
                         .insert(SeedButton)
                         .with_children(|parent| {
-                            parent.spawn_bundle(TextBundle::from_section(
+                            parent.spawn(TextBundle::from_section(
                                 seed.0.to_string(),
                                 TextStyle {
                                     font: asset_server.load("fonts/Saira.ttf"),
@@ -153,21 +148,20 @@ fn setup_ui(mut commands: Commands, asset_server: Res<AssetServer>, seed: Res<Rn
                 });
             // Main window
             parent
-                .spawn_bundle(NodeBundle {
+                .spawn(NodeBundle {
                     style: Style {
                         flex_grow: 2.,
                         ..default()
                     },
-                    color: Color::NONE.into(),
                     ..default()
                 })
                 .insert(ArenaArea);
 
             // Sidebar
             parent
-                .spawn_bundle(NodeBundle {
+                .spawn(NodeBundle {
                     style: Style {
-                        flex_direction: FlexDirection::ColumnReverse,
+                        flex_direction: FlexDirection::Column,
                         justify_content: JustifyContent::FlexStart,
                         flex_grow: 1.,
                         flex_basis: Val::Px(0.),
@@ -177,7 +171,7 @@ fn setup_ui(mut commands: Commands, asset_server: Res<AssetServer>, seed: Res<Rn
                         },
                         ..default()
                     },
-                    color: Color::rgb(0.5, 0.5, 0.5).into(),
+                    background_color: Color::rgb(0.5, 0.5, 0.5).into(),
                     ..default()
                 })
                 .with_children(|parent| {
@@ -194,7 +188,7 @@ struct TurnProgressBar;
 
 fn spawn_progress_bar(parent: &mut ChildBuilder) {
     parent
-        .spawn_bundle(NodeBundle {
+        .spawn(NodeBundle {
             style: Style {
                 size: Size::new(Val::Percent(100.0), Val::Px(30.)),
                 align_items: AlignItems::Center,
@@ -205,18 +199,18 @@ fn spawn_progress_bar(parent: &mut ChildBuilder) {
                 },
                 ..default()
             },
-            color: Color::rgb(0.6, 0.6, 0.6).into(),
+            background_color: Color::rgb(0.6, 0.6, 0.6).into(),
             ..default()
         })
         .with_children(|parent| {
             // Bar (fills up)
             parent
-                .spawn_bundle(NodeBundle {
+                .spawn(NodeBundle {
                     style: Style {
                         size: Size::new(Val::Percent(43.), Val::Percent(100.)),
                         ..default()
                     },
-                    color: Color::rgb(0.3, 0.3, 0.3).into(),
+                    background_color: Color::rgb(0.3, 0.3, 0.3).into(),
                     ..default()
                 })
                 .insert(TurnProgressBar);
@@ -235,7 +229,7 @@ fn update_progress_bar(
 
 fn spawn_sidebar_header(parent: &mut ChildBuilder, font: Handle<Font>) {
     parent
-        .spawn_bundle(NodeBundle {
+        .spawn(NodeBundle {
             style: Style {
                 flex_basis: Val::Px(0.),
                 flex_shrink: 0.,
@@ -243,11 +237,10 @@ fn spawn_sidebar_header(parent: &mut ChildBuilder, font: Handle<Font>) {
                 justify_content: JustifyContent::Center,
                 ..default()
             },
-            color: Color::NONE.into(),
             ..default()
         })
         .with_children(|parent| {
-            parent.spawn_bundle(TextBundle::from_section(
+            parent.spawn(TextBundle::from_section(
                 "Snakes!",
                 TextStyle {
                     font,
@@ -265,9 +258,9 @@ struct Scoreline;
 
 fn spawn_scoreboard(parent: &mut ChildBuilder, font: Handle<Font>) {
     parent
-        .spawn_bundle(NodeBundle {
+        .spawn(NodeBundle {
             style: Style {
-                flex_direction: FlexDirection::ColumnReverse,
+                flex_direction: FlexDirection::Column,
                 padding: UiRect::all(Val::Px(5.)),
                 margin: UiRect {
                     bottom: Val::Px(10.),
@@ -277,34 +270,32 @@ fn spawn_scoreboard(parent: &mut ChildBuilder, font: Handle<Font>) {
                 flex_grow: 1.,
                 ..default()
             },
-            color: Color::rgb(0.3, 0.3, 0.3).into(),
+            background_color: Color::rgb(0.3, 0.3, 0.3).into(),
             ..default()
         })
         .with_children(|parent| {
             // A heading row with the score labels
             parent
-                .spawn_bundle(NodeBundle {
+                .spawn(NodeBundle {
                     style: Style {
                         flex_direction: FlexDirection::Row,
                         justify_content: JustifyContent::FlexEnd,
                         size: Size::new(Val::Percent(100.), Val::Auto),
                         ..default()
                     },
-                    color: Color::NONE.into(),
                     ..default()
                 })
                 .with_children(|parent| {
-                    parent.spawn_bundle(NodeBundle {
+                    parent.spawn(NodeBundle {
                         style: Style {
                             flex_grow: 1. / 3.,
                             flex_shrink: 0.,
                             ..default()
                         },
-                        color: Color::NONE.into(),
                         ..default()
                     });
                     parent
-                        .spawn_bundle(NodeBundle {
+                        .spawn(NodeBundle {
                             style: Style {
                                 justify_content: JustifyContent::SpaceAround,
                                 flex_basis: Val::Percent(2. / 3.),
@@ -312,13 +303,12 @@ fn spawn_scoreboard(parent: &mut ChildBuilder, font: Handle<Font>) {
                                 flex_shrink: 0.,
                                 ..default()
                             },
-                            color: Color::NONE.into(),
                             ..default()
                         })
                         .with_children(|parent| {
                             for stat in ["Length", "Kills", "Deaths"] {
                                 parent
-                                    .spawn_bundle(NodeBundle {
+                                    .spawn(NodeBundle {
                                         style: Style {
                                             flex_grow: 1.,
                                             flex_basis: Val::Px(0.),
@@ -326,11 +316,10 @@ fn spawn_scoreboard(parent: &mut ChildBuilder, font: Handle<Font>) {
                                             margin: UiRect::all(Val::Px(5.)),
                                             ..default()
                                         },
-                                        color: Color::NONE.into(),
                                         ..default()
                                     })
                                     .with_children(|parent| {
-                                        parent.spawn_bundle(
+                                        parent.spawn(
                                             TextBundle::from_section(
                                                 stat,
                                                 TextStyle {
@@ -351,14 +340,13 @@ fn spawn_scoreboard(parent: &mut ChildBuilder, font: Handle<Font>) {
                 });
             // The actual player scores
             parent
-                .spawn_bundle(NodeBundle {
+                .spawn(NodeBundle {
                     style: Style {
-                        flex_direction: FlexDirection::ColumnReverse,
+                        flex_direction: FlexDirection::Column,
                         size: Size::new(Val::Percent(100.), Val::Percent(100.)),
                         overflow: Overflow::Hidden,
                         ..default()
                     },
-                    color: Color::NONE.into(),
                     ..default()
                 })
                 .insert(ScoreboardUi);
@@ -377,7 +365,7 @@ fn init_scoreboard(
         for (player, details) in players.iter() {
             // A row for each player
             let scoreline = commands
-                .spawn_bundle(NodeBundle {
+                .spawn(NodeBundle {
                     style: Style {
                         flex_direction: FlexDirection::Row,
                         size: Size::new(Val::Percent(100.), Val::Auto),
@@ -388,7 +376,6 @@ fn init_scoreboard(
                         },
                         ..default()
                     },
-                    color: Color::NONE.into(),
                     ..default()
                 })
                 .insert(Scoreline)
@@ -396,7 +383,7 @@ fn init_scoreboard(
                 .with_children(|parent| {
                     // Player details
                     parent
-                        .spawn_bundle(NodeBundle {
+                        .spawn(NodeBundle {
                             style: Style {
                                 justify_content: JustifyContent::FlexStart,
                                 align_items: AlignItems::Center,
@@ -404,13 +391,12 @@ fn init_scoreboard(
                                 flex_basis: Val::Px(0.),
                                 ..default()
                             },
-                            color: Color::NONE.into(),
                             ..default()
                         })
                         .with_children(|parent| {
                             // Player color
                             parent
-                                .spawn_bundle(NodeBundle {
+                                .spawn(NodeBundle {
                                     style: Style {
                                         size: Size::new(Val::Px(20.), Val::Px(20.)),
                                         margin: UiRect::all(Val::Px(5.)),
@@ -418,29 +404,27 @@ fn init_scoreboard(
                                         justify_content: JustifyContent::Center,
                                         ..default()
                                     },
-                                    color: details.color.into(),
+                                    background_color: details.color.into(),
                                     ..default()
                                 })
                                 .with_children(|parent| {
-                                    parent.spawn_bundle(ImageBundle {
+                                    parent.spawn(ImageBundle {
                                         image: asset_server.load("textures/dead.png").into(),
                                         style: Style {
                                             size: Size::new(Val::Percent(90.), Val::Percent(90.)),
                                             ..default()
                                         },
-                                        color: Color::NONE.into(), // Hidden by default (via 100% opacity)
                                         ..default()
                                     });
                                 });
                             // Player name
                             parent
-                                .spawn_bundle(NodeBundle {
+                                .spawn(NodeBundle {
                                     style: Style { ..default() },
-                                    color: Color::NONE.into(),
                                     ..default()
                                 })
                                 .with_children(|parent| {
-                                    parent.spawn_bundle(TextBundle::from_section(
+                                    parent.spawn(TextBundle::from_section(
                                         details.name.to_string(),
                                         TextStyle {
                                             font: font.clone(),
@@ -452,7 +436,7 @@ fn init_scoreboard(
                         });
 
                     parent
-                        .spawn_bundle(NodeBundle {
+                        .spawn(NodeBundle {
                             style: Style {
                                 justify_content: JustifyContent::SpaceAround,
                                 align_items: AlignItems::Center,
@@ -461,7 +445,6 @@ fn init_scoreboard(
                                 flex_shrink: 0.,
                                 ..default()
                             },
-                            color: Color::NONE.into(),
                             ..default()
                         })
                         .with_children(|parent| {
@@ -476,7 +459,7 @@ fn init_scoreboard(
                             ];
                             for stat in stats {
                                 parent
-                                    .spawn_bundle(NodeBundle {
+                                    .spawn(NodeBundle {
                                         style: Style {
                                             flex_grow: 1.,
                                             flex_basis: Val::Px(0.),
@@ -484,11 +467,10 @@ fn init_scoreboard(
                                             margin: UiRect::all(Val::Px(5.)),
                                             ..default()
                                         },
-                                        color: Color::NONE.into(),
                                         ..default()
                                     })
                                     .with_children(|parent| {
-                                        parent.spawn_bundle(
+                                        parent.spawn(
                                             TextBundle::from_section(
                                                 stat,
                                                 TextStyle {
@@ -518,7 +500,7 @@ fn update_scoreboard(
     mut commands: Commands,
     scorelines: Query<(Entity, &Style, &Node, &Children, &PlayerId), With<Scoreline>>,
     mut text: Query<&mut Text, With<Parent>>,
-    icons: Query<&UiColor, (With<UiImage>, With<Parent>)>,
+    icons: Query<&BackgroundColor, (With<UiImage>, With<Parent>)>,
     all_children: Query<&Children>,
     players: Res<Players>,
 ) {
@@ -534,7 +516,7 @@ fn update_scoreboard(
     });
 
     for (rank, (entity, style, node, children, player_id)) in scorelines.into_iter().enumerate() {
-        let new_y = Val::Px(node.size.y * rank as f32);
+        let new_y = Val::Px(node.size().y * rank as f32);
 
         let new_style = Style {
             position: UiRect {
@@ -566,7 +548,7 @@ fn update_scoreboard(
                         };
 
                         commands.entity(*dead_icon).insert(color.ease_to(
-                            UiColor(new_color),
+                            BackgroundColor(new_color),
                             EaseFunction::QuadraticInOut,
                             EasingType::Once {
                                 duration: Duration::from_millis(75),
@@ -634,19 +616,21 @@ fn button_clicked<B: Component>(
 }
 
 fn button_interactions(
-    mut query: Query<(&Interaction, &mut UiColor), (Changed<Interaction>, With<UiButton>)>,
+    mut query: Query<(&Interaction, &mut BackgroundColor), (Changed<Interaction>, With<UiButton>)>,
 ) {
     for (interaction, mut color) in query.iter_mut() {
         match interaction {
-            Interaction::Clicked => *color = UiColor(BUTTON_CLICK),
-            Interaction::Hovered => *color = UiColor(BUTTON_HOVER),
-            Interaction::None => *color = UiColor(BUTTON_NORMAL),
+            Interaction::Clicked => *color = BackgroundColor(BUTTON_CLICK),
+            Interaction::Hovered => *color = BackgroundColor(BUTTON_HOVER),
+            Interaction::None => *color = BackgroundColor(BUTTON_NORMAL),
         }
     }
 }
 
 fn copy_seed(seed: Res<RngSeed>) {
-    todo!()
+    let mut ctx = ClipboardContext::new().unwrap();
+    ctx.set_contents(seed.0.to_owned()).unwrap();
+    // TODO: Some kind of feedback that the seed was copied
 }
 
 fn toggle_pause(mut commands: Commands, current_state: Res<CurrentState<GameState>>) {
@@ -674,7 +658,7 @@ fn pause_button_text(
 
 fn spawn_playback_controls(parent: &mut ChildBuilder, font: Handle<Font>) {
     parent
-        .spawn_bundle(ButtonBundle {
+        .spawn(ButtonBundle {
             style: Style {
                 size: Size::new(Val::Px(150.0), Val::Px(65.0)),
                 // center button
@@ -685,13 +669,13 @@ fn spawn_playback_controls(parent: &mut ChildBuilder, font: Handle<Font>) {
                 align_items: AlignItems::Center,
                 ..default()
             },
-            color: BUTTON_NORMAL.into(),
+            background_color: BUTTON_NORMAL.into(),
             ..default()
         })
         .insert(UiButton)
         .insert(PauseButton)
         .with_children(|parent| {
-            parent.spawn_bundle(TextBundle {
+            parent.spawn(TextBundle {
                 text: Text::from_section(
                     "Pause",
                     TextStyle {
@@ -745,7 +729,7 @@ fn draw_grid_objects(
     if let Ok((node, transform)) = arena.get_single() {
         if let Some(window) = windows.get_primary() {
             let window_size = Vec2::new(window.width(), window.height());
-            let node_size = Vec2::new(node.size.x, node.size.y);
+            let node_size = node.size();
 
             let cell_size = f32::min(
                 node_size.x / grid.width as f32,
@@ -772,5 +756,5 @@ fn draw_grid_objects(
 }
 
 fn setup_cameras(mut commands: Commands) {
-    commands.spawn_bundle(Camera2dBundle::default());
+    commands.spawn(Camera2dBundle::default());
 }

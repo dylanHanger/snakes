@@ -1,7 +1,7 @@
 use std::ops::{Index, IndexMut};
 
-use bevy::prelude::{Component, Deref, DerefMut, IVec2, Query, Vec2, With};
-use bevy_turborand::rng::{CellState, Rng};
+use bevy::prelude::{Component, Deref, DerefMut, IVec2, Query, Resource, Vec2, With};
+use bevy_turborand::{rng::Rng, TurboRand};
 use serde::Deserialize;
 
 use crate::game::{collisions::prelude::Collidable, movement::prelude::Direction};
@@ -28,7 +28,7 @@ impl GridScale {
     }
 }
 
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Deserialize, Resource)]
 #[serde(default)]
 pub struct GameGrid {
     pub width: usize,
@@ -50,7 +50,7 @@ impl GameGrid {
     pub fn get_unoccupied_position(
         &self,
         occupied: &Query<&GridPosition, With<Collidable>>,
-        rng: &mut Rng<CellState>,
+        rng: &mut Rng,
     ) -> GridPosition {
         // TODO: This will hang if there are no unoccupied positions
         'outer: loop {

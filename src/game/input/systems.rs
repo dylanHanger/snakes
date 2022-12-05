@@ -1,5 +1,5 @@
 use bevy::prelude::{Commands, Entity, Input, KeyCode, Query, Res, ResMut, With, Without};
-use bevy_turborand::RngComponent;
+use bevy_turborand::{DelegatedRng, RngComponent, TurboRand};
 
 use crate::game::{
     food::prelude::Food,

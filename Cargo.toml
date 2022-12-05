@@ -8,13 +8,14 @@ license = "Apache-2.0"
 
 [dependencies]
 base64 = "0.13.0"
-bevy = { version = "0.8.0", features = ["wayland", "serialize"] }
-bevy-inspector-egui = "0.12.0"
-bevy_easings = { version = "0.8.0", features = ["ui"] }
-bevy_turborand = "0.2.0"
-clap = { version = "3.2.15", features = ["derive"] }
+bevy = { version = "0.9.1", features = ["wayland", "serialize"] }
+bevy-inspector-egui = "0.14.0"
+bevy_easings = { version = "0.9.0", features = ["ui"] }
+bevy_turborand = "0.4.2"
+clap = { version = "4.0.29", features = ["derive"] }
+copypasta = "0.8.1"
 crossbeam-channel = "0.5.6"
-iyes_loopless = "0.7.0"
+iyes_loopless = "0.9.1"
 rand = "0.8.5"
 serde = { version = "1.0.140", features = ["derive"] }
 serde_yaml = "0.9.1"

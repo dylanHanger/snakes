@@ -1,6 +1,9 @@
 use std::time::Duration;
 
-use bevy::{prelude::StageLabel, time::Timer};
+use bevy::{
+    prelude::{Resource, StageLabel},
+    time::Timer,
+};
 
 use super::config::TurnConfig;
 
@@ -13,6 +16,7 @@ pub enum TurnStage {
     PostSimulate,
 }
 
+#[derive(Resource)]
 pub struct Turn {
     pub ready: bool,
     pub requested: bool,
@@ -28,7 +32,7 @@ impl Turn {
         Self {
             ready: false,
             requested: false,
-            timer: Timer::new(duration, false),
+            timer: Timer::new(duration, bevy::time::TimerMode::Once),
             wait_for_all,
 
             current: 0,

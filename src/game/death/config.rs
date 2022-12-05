@@ -1,6 +1,7 @@
+use bevy::prelude::Resource;
 use serde::Deserialize;
 
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Deserialize, Resource)]
 #[serde(default)]
 pub struct DeathConfig {
     #[serde(rename = "respawn")]

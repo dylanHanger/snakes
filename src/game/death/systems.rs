@@ -1,5 +1,5 @@
 use bevy::prelude::{Commands, Entity, EventReader, Query, Res, ResMut, With, Without};
-use bevy_turborand::RngComponent;
+use bevy_turborand::{DelegatedRng, RngComponent};
 
 use crate::game::{
     collisions::prelude::Collidable,
@@ -25,7 +25,7 @@ pub fn death_system(
             }
             commands
                 .entity(target)
-                .remove_bundle::<SnakeBundle>()
+                .remove::<SnakeBundle>()
                 .insert(Dead {
                     time: death_config.respawn_time,
                 });
@@ -87,6 +87,6 @@ pub fn respawn_system(
 
             details.is_dead = false;
         }
-        entity.remove::<Respawning>().insert_bundle(bundle);
+        entity.remove::<Respawning>().insert(bundle);
     }
 }

@@ -15,14 +15,14 @@ pub fn slither_system(
 ) {
     for (mut snake, position, intent, player) in q.iter_mut() {
         // Ensure the tail grows with the snakes movement
-        let mut segment = commands.spawn();
+        let mut segment = commands.spawn_empty();
         let mut bundle = SegmentBundle::new(*position);
         if let Some(player) = player {
             let details = players.get(player).expect("The player should exist");
             segment.insert(*player);
             bundle.sprite.color = details.color * 0.6;
         }
-        segment.insert_bundle(bundle);
+        segment.insert(bundle);
 
         snake.body.insert(0, segment.id());
 

@@ -1,7 +1,7 @@
 use std::cmp::Ordering;
 
 use bevy::{
-    prelude::{Component, Deref, DerefMut},
+    prelude::{Component, Deref, DerefMut, Resource},
     utils::HashMap,
 };
 
@@ -34,5 +34,5 @@ impl Ord for Score {
     }
 }
 
-#[derive(Debug, Default, Deref, DerefMut)]
+#[derive(Debug, Default, Deref, DerefMut, Resource)]
 pub struct Players(pub HashMap<PlayerId, PlayerDetails>);

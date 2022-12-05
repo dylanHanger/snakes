@@ -28,10 +28,7 @@ pub fn setup_players(
 
     for (&id, details) in players.iter() {
         let e = commands
-            .spawn()
-            .insert(RngComponent::from_global(&mut global_rng))
-            .insert(id)
-            .insert(Respawning)
+            .spawn((RngComponent::from(&mut global_rng), id, Respawning))
             .id();
 
         match &details.player_type {

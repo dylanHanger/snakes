@@ -20,7 +20,7 @@ use bevy::{
     diagnostic::{DiagnosticsPlugin, LogDiagnosticsPlugin},
     log::LogPlugin,
     prelude::{
-        App, Commands, Component, CoreStage, Deref, IntoChainSystem, Plugin, StartupStage,
+        App, Commands, Component, CoreStage, Deref, IntoPipeSystem, Plugin, Resource, StartupStage,
         SystemSet, SystemStage,
     },
 };
@@ -43,7 +43,7 @@ use crate::config::read_config_from_file;
 
 use self::{death::config::DeathConfig, food::config::FoodConfig, turns::config::TurnConfig};
 
-#[derive(Deref)]
+#[derive(Deref, Resource)]
 pub struct RngSeed(pub String);
 
 #[derive(Component)]
@@ -66,7 +66,7 @@ impl Plugin for SnakesPlugin {
         app.add_plugin(DiagnosticsPlugin::default())
             .add_plugin(LogPlugin::default())
             .add_plugin(LogDiagnosticsPlugin::default())
-            .add_plugin(RngPlugin::new(Some(h.finish())));
+            .add_plugin(RngPlugin::new().with_rng_seed(h.finish()));
 
         // Add stages for more fine grained control over when entities are added or removed
         add_stages(app);
@@ -214,7 +214,7 @@ fn add_simulation(app: &mut App) {
         ConditionSet::new()
             .label("simulate")
             .run_if(turn_ready)
-            .with_system(slither_system.chain(movement_system))
+            .with_system(slither_system.pipe(movement_system))
             .into(),
     )
     .add_system_set_to_stage(

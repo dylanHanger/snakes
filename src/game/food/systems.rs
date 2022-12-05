@@ -1,7 +1,7 @@
 use bevy::prelude::{
     default, Color, Commands, Entity, EventWriter, Query, Res, ResMut, Sprite, SpriteBundle, With,
 };
-use bevy_turborand::GlobalRng;
+use bevy_turborand::{DelegatedRng, GlobalRng};
 
 use crate::game::{
     collisions::prelude::Collidable,
@@ -30,7 +30,7 @@ pub fn spawn_food_system(
     let rng = global_rng.get_mut();
     let position = grid.get_unoccupied_position(&occupied, rng);
     commands
-        .spawn_bundle(SpriteBundle {
+        .spawn(SpriteBundle {
             sprite: Sprite {
                 color: Color::rgb(0.5, 0.8, 0.6),
                 ..default()

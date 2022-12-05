@@ -1,6 +1,6 @@
 use std::path::PathBuf;
 
-use clap::Parser;
+use clap::{ArgAction, Parser};
 
 #[derive(Parser)]
 #[clap(author, version, about, long_about = None)]
@@ -8,16 +8,15 @@ pub struct Cli {
     #[clap(
         short,
         long,
-        parse(from_os_str),
+        value_parser,
         help = "The file to read game settings from",
         value_name = "FILE",
         default_value = "config.yaml"
     )]
     pub config: PathBuf,
     #[clap(
-        short,
         long,
-        parse(from_flag),
+        action = ArgAction::SetTrue,
         help = "Run in headless mode, without any graphical output"
     )]
     pub headless: bool,
