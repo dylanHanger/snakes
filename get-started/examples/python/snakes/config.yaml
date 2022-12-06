@@ -18,7 +18,8 @@ players:
   - Python Example:
       type: custom
       executable: python
-      arguments: src/main.py
+      args:
+        - src/main.py
 
   - Easy:
       type: builtin
