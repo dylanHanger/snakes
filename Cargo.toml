@@ -12,6 +12,7 @@ bevy = { version = "0.9.1", features = ["wayland", "serialize"] }
 bevy-inspector-egui = "0.14.0"
 bevy_easings = { version = "0.9.0", features = ["ui"] }
 bevy_turborand = "0.4.2"
+chrono = "0.4.23"
 clap = { version = "4.0.29", features = ["derive"] }
 copypasta = "0.8.1"
 crossbeam-channel = "0.5.6"

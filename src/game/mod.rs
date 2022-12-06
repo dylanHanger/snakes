@@ -5,6 +5,7 @@ pub mod grid;
 pub mod input;
 pub mod movement;
 pub mod players;
+pub mod replays;
 pub mod snakes;
 pub mod turns;
 
@@ -20,8 +21,8 @@ use bevy::{
     diagnostic::{DiagnosticsPlugin, LogDiagnosticsPlugin},
     log::LogPlugin,
     prelude::{
-        App, Commands, Component, CoreStage, Deref, IntoPipeSystem, Plugin, Resource, StartupStage,
-        SystemSet, SystemStage,
+        App, Commands, Component, CoreStage, Deref, In, IntoPipeSystem, Plugin, Resource,
+        StartupStage, SystemSet, SystemStage,
     },
 };
 use bevy_turborand::RngPlugin;
@@ -41,7 +42,12 @@ use turns::prelude::*;
 
 use crate::config::read_config_from_file;
 
-use self::{death::config::DeathConfig, food::config::FoodConfig, turns::config::TurnConfig};
+use self::{
+    death::config::DeathConfig,
+    food::config::FoodConfig,
+    replays::prelude::{create_replay, record_replay},
+    turns::config::TurnConfig,
+};
 
 #[derive(Deref, Resource)]
 pub struct RngSeed(pub String);
@@ -74,6 +80,20 @@ impl Plugin for SnakesPlugin {
         app.insert_resource(RngSeed(config.seed));
         // Let the world know the size of the arena
         app.insert_resource(config.grid);
+
+        // Replay stuff
+        app.add_startup_system(
+            create_replay.pipe(|result: In<Result<(), std::io::Error>>| result.0.unwrap()),
+        );
+        app.add_system_set_to_stage(
+            TurnStage::Request,
+            ConditionSet::new()
+                .run_if(turn_ready)
+                .with_system(
+                    record_replay.pipe(|result: In<Result<(), std::io::Error>>| result.0.unwrap()),
+                )
+                .into(),
+        );
 
         // Add core gameplay mechanics
         add_players(app, config.players);

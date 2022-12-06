@@ -124,7 +124,7 @@ pub fn external_update_system(
             if let Some(player) = player {
                 agent.send(format!("{} ", player.id));
             } else {
-                agent.send("-1".to_string());
+                agent.send("-1 ".to_string());
             }
             let length = 1 + snake.body.len();
             agent.send(format!("{} {} {}", length, position.x, position.y));
