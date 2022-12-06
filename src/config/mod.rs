@@ -21,6 +21,7 @@ use crate::game::{
         config::{PlayerDetails, PlayerType},
         prelude::{PlayerId, Players},
     },
+    replays::config::ReplayConfig,
     turns::config::TurnConfig,
 };
 
@@ -56,6 +57,8 @@ pub struct GameConfig {
 
     pub seed: String,
 
+    pub replays: ReplayConfig,
+
     pub turns: TurnConfig,
     pub death: DeathConfig,
     pub food: FoodConfig,
@@ -87,6 +90,9 @@ impl<'de> Deserialize<'de> for GameConfig {
             #[serde(flatten)]
             death: DeathConfig,
 
+            #[serde(flatten)]
+            replays: ReplayConfig,
+
             food: FoodConfig,
 
             players: Vec<HashMap<String, PlayerWrapper>>,
@@ -97,6 +103,7 @@ impl<'de> Deserialize<'de> for GameConfig {
             seed,
             turns,
             death,
+            replays,
             food,
             players,
         } = Mapping::deserialize(deserializer)?;
@@ -119,6 +126,7 @@ impl<'de> Deserialize<'de> for GameConfig {
             grid,
             seed,
             death,
+            replays,
             turns,
             food,
 

@@ -9,14 +9,20 @@ use crate::game::players::prelude::{PlayerId, Players};
 use crate::game::snakes::prelude::{Snake, SnakeSegment};
 use crate::game::RngSeed;
 
+use super::config::ReplayConfig;
 use super::data::ReplayWriter;
 
 pub fn create_replay(
     mut commands: Commands,
+    config: Res<ReplayConfig>,
     seed: Res<RngSeed>,
     grid: Res<GameGrid>,
     players: Res<Players>,
 ) -> Result<(), std::io::Error> {
+    if !config.record {
+        return Ok(());
+    }
+
     // Create a new replay file
     let now = Utc::now();
     let timestamp = now.format("%Y-%m-%dT%H-%M-%S").to_string();
@@ -43,10 +49,14 @@ pub fn create_replay(
 
 pub fn record_replay(
     mut replay: ResMut<ReplayWriter>,
+    config: Res<ReplayConfig>,
     snakes: Query<(&GridPosition, &Snake, Option<&PlayerId>)>,
     segments: Query<&GridPosition, With<SnakeSegment>>,
     food: Query<(&GridPosition, &Food)>,
 ) -> Result<(), std::io::Error> {
+    if !config.record {
+        return Ok(());
+    }
     // TODO: Optimise this, current format is a lot of wasted space
     let mut sorted_snakes = snakes
         .iter()

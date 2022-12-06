@@ -5,6 +5,7 @@ height: 32
 turns: 1500
 timeout: 25
 wait: false
+record: false
 
 respawn: 10
 

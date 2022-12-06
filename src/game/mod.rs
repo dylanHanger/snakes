@@ -45,7 +45,7 @@ use crate::config::read_config_from_file;
 use self::{
     death::config::DeathConfig,
     food::config::FoodConfig,
-    replays::prelude::{create_replay, record_replay},
+    replays::prelude::{create_replay, record_replay, ReplayWriter},
     turns::config::TurnConfig,
 };
 
@@ -82,6 +82,7 @@ impl Plugin for SnakesPlugin {
         app.insert_resource(config.grid);
 
         // Replay stuff
+        app.insert_resource(config.replays);
         app.add_startup_system(
             create_replay.pipe(|result: In<Result<(), std::io::Error>>| result.0.unwrap()),
         );
@@ -89,6 +90,7 @@ impl Plugin for SnakesPlugin {
             TurnStage::Request,
             ConditionSet::new()
                 .run_if(turn_ready)
+                .run_if_resource_exists::<ReplayWriter>()
                 .with_system(
                     record_replay.pipe(|result: In<Result<(), std::io::Error>>| result.0.unwrap()),
                 )
