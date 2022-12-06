@@ -93,6 +93,7 @@ fn add_ui(app: &mut App) {
                 .with_system(button_interactions)
                 .with_system(pause_button_text)
                 .with_system(toggle_pause.run_if(button_clicked::<PauseButton>))
+                .with_system(step_once.run_if(button_clicked::<StepButton>))
                 .with_system(copy_seed.run_if(button_clicked::<SeedButton>))
                 .into(),
         );
@@ -597,6 +598,8 @@ struct UiButton;
 struct SeedButton;
 #[derive(Component)]
 struct PauseButton;
+#[derive(Component)]
+struct StepButton;
 
 const BUTTON_NORMAL: Color = Color::rgb(0.35, 0.35, 0.35);
 const BUTTON_HOVER: Color = Color::rgb(0.45, 0.45, 0.45);
@@ -633,8 +636,14 @@ fn copy_seed(seed: Res<RngSeed>) {
     // TODO: Some kind of feedback that the seed was copied
 }
 
+fn step_once(mut commands: Commands, current_state: Res<CurrentState<GameState>>) {
+    if current_state.0 != GameState::Step {
+        commands.insert_resource(NextState(GameState::Step));
+    }
+}
+
 fn toggle_pause(mut commands: Commands, current_state: Res<CurrentState<GameState>>) {
-    if current_state.0 == GameState::Running {
+    if current_state.0 != GameState::Paused {
         commands.insert_resource(NextState(GameState::Paused));
     } else {
         commands.insert_resource(NextState(GameState::Running));
@@ -648,7 +657,7 @@ fn pause_button_text(
 ) {
     for children in pause_buttons.iter() {
         let mut text = text.get_mut(children[0]).unwrap();
-        if current_state.0 == GameState::Paused {
+        if current_state.0 != GameState::Running {
             text.sections[0].value = "Resume".to_string();
         } else {
             text.sections[0].value = "Pause".to_string();
@@ -658,34 +667,71 @@ fn pause_button_text(
 
 fn spawn_playback_controls(parent: &mut ChildBuilder, font: Handle<Font>) {
     parent
-        .spawn(ButtonBundle {
-            style: Style {
-                size: Size::new(Val::Px(150.0), Val::Px(65.0)),
-                // center button
-                margin: UiRect::all(Val::Auto),
-                // horizontally center child text
-                justify_content: JustifyContent::Center,
-                // vertically center child text
-                align_items: AlignItems::Center,
-                ..default()
-            },
-            background_color: BUTTON_NORMAL.into(),
+        .spawn(NodeBundle {
+            style: Style { ..default() },
             ..default()
         })
-        .insert(UiButton)
-        .insert(PauseButton)
         .with_children(|parent| {
-            parent.spawn(TextBundle {
-                text: Text::from_section(
-                    "Pause",
-                    TextStyle {
-                        font: font.clone(),
-                        font_size: 40.0,
-                        color: Color::rgb(0.9, 0.9, 0.9),
+            parent
+                .spawn(ButtonBundle {
+                    style: Style {
+                        size: Size::new(Val::Px(150.0), Val::Px(65.0)),
+                        // center button
+                        margin: UiRect::all(Val::Auto),
+                        // horizontally center child text
+                        justify_content: JustifyContent::Center,
+                        // vertically center child text
+                        align_items: AlignItems::Center,
+                        ..default()
                     },
-                ),
-                ..default()
-            });
+                    background_color: BUTTON_NORMAL.into(),
+                    ..default()
+                })
+                .insert(UiButton)
+                .insert(PauseButton)
+                .with_children(|parent| {
+                    parent.spawn(TextBundle {
+                        text: Text::from_section(
+                            "Pause",
+                            TextStyle {
+                                font: font.clone(),
+                                font_size: 40.0,
+                                color: Color::rgb(0.9, 0.9, 0.9),
+                            },
+                        ),
+                        ..default()
+                    });
+                });
+            parent
+                .spawn(ButtonBundle {
+                    style: Style {
+                        size: Size::new(Val::Px(150.0), Val::Px(65.0)),
+                        // center button
+                        margin: UiRect::all(Val::Auto),
+                        // horizontally center child text
+                        justify_content: JustifyContent::Center,
+                        // vertically center child text
+                        align_items: AlignItems::Center,
+                        ..default()
+                    },
+                    background_color: BUTTON_NORMAL.into(),
+                    ..default()
+                })
+                .insert(UiButton)
+                .insert(StepButton)
+                .with_children(|parent| {
+                    parent.spawn(TextBundle {
+                        text: Text::from_section(
+                            "Step",
+                            TextStyle {
+                                font: font.clone(),
+                                font_size: 40.0,
+                                color: Color::rgb(0.9, 0.9, 0.9),
+                            },
+                        ),
+                        ..default()
+                    });
+                });
         });
 }
 

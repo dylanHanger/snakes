@@ -84,6 +84,7 @@ impl Plugin for SnakesPlugin {
         add_input(app);
 
         // Add a cleanup system to prevent zombie processes
+        // TODO: This system should also run when before the game closes
         app.add_system_set_to_stage(
             CoreStage::PostUpdate,
             ConditionSet::new()
@@ -153,7 +154,7 @@ fn add_turns(app: &mut App, turn_config: TurnConfig) {
                 // Increment the turn timer
                 .with_system(turn_timer_system)
                 // Check if the turn is ready to be simulated
-                .with_system(turn_ready_system.run_in_state(GameState::Running))
+                .with_system(turn_ready_system.run_not_in_state(GameState::Paused))
                 .into(),
         )
         .add_system_set_to_stage(
@@ -163,7 +164,7 @@ fn add_turns(app: &mut App, turn_config: TurnConfig) {
                 .run_in_state(GameState::Step)
                 .run_if(turn_ready)
                 .with_system(|mut commands: Commands| {
-                    commands.insert_resource(NextState(GameState::Running));
+                    commands.insert_resource(NextState(GameState::Paused));
                 })
                 .into(),
         )
