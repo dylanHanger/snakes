@@ -71,6 +71,11 @@ height: <arena height>
 
 seed: <seed for RNG>
 
+replays:
+  record: <whether to record replays or not>
+  path: <the folder to save replays under>
+  format: <format pattern for filenames>
+
 turns: <max turns>
 timeout: <allowed computation time>
 wait: <whether to wait for all snakes to compute a move>
@@ -85,6 +90,7 @@ players:
   # A custom snake AI
   - <Snake name>:
       type: custom
+      silent: <whether to suppress logging from this snake>
       executable: <executable to run>
       args:
         - <arg1>
@@ -193,6 +199,12 @@ height: 32
 turns: 1500
 timeout: 25
 wait: false
+seed: the holy grail
+
+replays:
+  record: true
+  path: replays/
+  format: "{seed}-{time:%Y-%m-%dT%H-%M-%S}"
 
 respawn: 10
 
@@ -203,6 +215,7 @@ food:
 players:
   - Monty:
       type: custom
+      silent: false
       executable: python
       args:
         - monty.py
@@ -245,8 +258,9 @@ Yes. Yes it is.
 ## Roadmap
 
 - [x] A UI scoreboard
-- [x] Pausing, ~~single stepping~~
-- [ ] Replays
+- [x] Pausing
+- [x] Single Stepping
+- [ ] Replays (In progress)
 - [ ] An actual winner
 - [ ] Automated tournaments
 - [ ] Web based viewer and leaderboard
