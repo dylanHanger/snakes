@@ -180,7 +180,7 @@ fn add_turns(app: &mut App, turn_config: TurnConfig) {
                 .into(),
         )
         .add_system_set_to_stage(
-            CoreStage::PostUpdate,
+            TurnStage::PostSimulate,
             ConditionSet::new()
                 .label("step")
                 .run_in_state(GameState::Step)
