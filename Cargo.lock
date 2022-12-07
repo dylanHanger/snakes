@@ -3377,6 +3377,7 @@ dependencies = [
  "crossbeam-channel",
  "iyes_loopless",
  "rand",
+ "regex",
  "serde",
  "serde_yaml",
  "wait-timeout",

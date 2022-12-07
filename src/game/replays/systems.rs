@@ -1,5 +1,4 @@
 use bevy::prelude::{Commands, Query, Res, ResMut, With};
-use chrono::Utc;
 use std::fs::File;
 use std::io::Write;
 
@@ -23,17 +22,14 @@ pub fn create_replay(
         return Ok(());
     }
 
-    // Create a new replay file
-    let now = Utc::now();
-    let timestamp = now.format("%Y-%m-%dT%H-%M-%S").to_string();
-    let filename = format!("replays/{}.rpl", timestamp);
-    std::fs::create_dir_all("replays/")?;
-    let file = File::create(filename)?;
+    let full_path = config.get_full_path(&seed);
+    if let Some(parent) = full_path.parent() {
+        std::fs::create_dir_all(parent)?;
+    }
+    let file = File::create(full_path)?;
 
     let mut replay = ReplayWriter::new(file);
 
-    // Write the timestamp to the file
-    writeln!(replay, "{}", timestamp)?;
     // Write the game seed to the file
     writeln!(replay, "{}", seed.0)?;
     // Write the game size to the file
@@ -57,17 +53,6 @@ pub fn record_replay(
     if !config.record {
         return Ok(());
     }
-    // TODO: Optimise this, current format is a lot of wasted space
-    let mut sorted_snakes = snakes
-        .iter()
-        .collect::<Vec<(&GridPosition, &Snake, Option<&PlayerId>)>>();
-    sorted_snakes.sort_by_key(|(_, _, p)| {
-        if let Some(player) = p {
-            player.id
-        } else {
-            u32::MAX
-        }
-    });
 
     // Save food
     for (position, food) in food.iter() {
@@ -76,7 +61,7 @@ pub fn record_replay(
     writeln!(replay)?;
 
     // Save snakes
-    for (position, snake, player) in &sorted_snakes {
+    for (position, snake, player) in &snakes {
         if let Some(player) = player {
             write!(replay, "{} ", player.id)?;
         } else {

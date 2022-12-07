@@ -90,7 +90,6 @@ impl<'de> Deserialize<'de> for GameConfig {
             #[serde(flatten)]
             death: DeathConfig,
 
-            #[serde(flatten)]
             replays: ReplayConfig,
 
             food: FoodConfig,
