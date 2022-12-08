@@ -18,6 +18,7 @@ use std::{
 };
 
 use bevy::{
+    app::AppExit,
     diagnostic::{DiagnosticsPlugin, LogDiagnosticsPlugin},
     log::LogPlugin,
     prelude::{
@@ -106,12 +107,18 @@ impl Plugin for SnakesPlugin {
         add_input(app);
 
         // Add a cleanup system to prevent zombie processes
-        // TODO: This system should also run when before the game closes
         app.add_system_set_to_stage(
             CoreStage::PostUpdate,
             ConditionSet::new()
                 .run_if(turn_ready)
                 .run_if(turns_finished)
+                .with_system(kill_external_agents)
+                .into(),
+        );
+        app.add_system_set_to_stage(
+            CoreStage::Last,
+            ConditionSet::new()
+                .run_on_event::<AppExit>()
                 .with_system(kill_external_agents)
                 .into(),
         );
