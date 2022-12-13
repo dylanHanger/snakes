@@ -2,12 +2,12 @@ use bevy::{prelude::App, MinimalPlugins};
 
 mod config;
 mod game;
-mod headful;
+mod gui;
 
 use clap::Parser;
 use config::Cli;
 use game::SnakesPlugin;
-use headful::HeadfulPlugin;
+use gui::GuiPlugin;
 
 fn main() {
     let cli = Cli::parse();
@@ -19,7 +19,7 @@ fn main() {
     });
 
     if !cli.headless {
-        app.add_plugin(HeadfulPlugin);
+        app.add_plugin(GuiPlugin);
     }
 
     app.run();

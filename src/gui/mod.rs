@@ -32,8 +32,10 @@ use crate::game::{
     GameState, RngSeed,
 };
 
-pub struct HeadfulPlugin;
-impl Plugin for HeadfulPlugin {
+mod widgets;
+
+pub struct GuiPlugin;
+impl Plugin for GuiPlugin {
     fn build(&self, app: &mut bevy::prelude::App) {
         app.insert_resource(ClearColor(Color::rgb(0.1, 0.1, 0.1)));
 
@@ -253,7 +255,7 @@ fn spawn_sidebar_header(parent: &mut ChildBuilder, font: Handle<Font>) {
 }
 
 #[derive(Component)]
-struct ScoreboardUi;
+struct Leaderboard;
 #[derive(Component)]
 struct Scoreline;
 
@@ -350,13 +352,13 @@ fn spawn_scoreboard(parent: &mut ChildBuilder, font: Handle<Font>) {
                     },
                     ..default()
                 })
-                .insert(ScoreboardUi);
+                .insert(Leaderboard);
         });
 }
 
 fn init_scoreboard(
     mut commands: Commands,
-    ui: Query<Entity, With<ScoreboardUi>>,
+    ui: Query<Entity, With<Leaderboard>>,
     players: Res<Players>,
     asset_server: Res<AssetServer>,
 ) {
