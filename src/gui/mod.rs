@@ -32,6 +32,8 @@ use crate::game::{
     GameState, RngSeed,
 };
 
+use self::widgets::{init_leaderboard, spawn_leaderboard};
+
 mod widgets;
 
 pub struct GuiPlugin;
@@ -86,20 +88,68 @@ impl Plugin for GuiPlugin {
 }
 
 fn add_ui(app: &mut App) {
-    app.add_startup_system(setup_ui)
-        .add_startup_system_to_stage(StartupStage::PostStartup, init_scoreboard)
-        .add_system(update_scoreboard)
-        .add_system(update_progress_bar)
-        .add_system_set(
-            ConditionSet::new()
-                .with_system(button_interactions)
-                .with_system(pause_button_text)
-                .with_system(toggle_pause.run_if(button_clicked::<PauseButton>))
-                .with_system(step_once.run_if(button_clicked::<StepButton>))
-                .with_system(copy_seed.run_if(button_clicked::<SeedButton>))
-                .into(),
-        );
+    app.add_startup_system(setup_new_ui)
+        .add_startup_system_to_stage(StartupStage::PostStartup, init_leaderboard)
+        // .add_startup_system(setup_ui)
+        // .add_startup_system_to_stage(StartupStage::PostStartup, init_scoreboard)
+        // .add_system(update_scoreboard)
+        // .add_system(update_progress_bar)
+        // .add_system_set(
+        //     ConditionSet::new()
+        //         .with_system(button_interactions)
+        //         .with_system(pause_button_text)
+        //         .with_system(toggle_pause.run_if(button_clicked::<PauseButton>))
+        //         .with_system(step_once.run_if(button_clicked::<StepButton>))
+        //         .with_system(copy_seed.run_if(button_clicked::<SeedButton>))
+        //         .into(),
+        // );
+        ;
 }
+
+fn setup_new_ui(mut commands: Commands, asset_server: Res<AssetServer>, seed: Res<RngSeed>) {
+    commands
+        // Root UI node
+        .spawn(NodeBundle {
+            style: Style {
+                size: Size::new(Val::Percent(100.), Val::Percent(100.)),
+                ..default()
+            },
+            ..default()
+        })
+        .with_children(|parent| {
+            // Main window
+            parent
+                .spawn(NodeBundle {
+                    style: Style {
+                        flex_grow: 2.,
+                        ..default()
+                    },
+                    ..default()
+                })
+                .insert(ArenaArea);
+
+            parent
+                .spawn(NodeBundle {
+                    style: Style {
+                        flex_direction: FlexDirection::Column,
+                        justify_content: JustifyContent::FlexStart,
+                        flex_grow: 1.,
+                        flex_basis: Val::Px(0.),
+                        padding: UiRect {
+                            top: Val::Undefined,
+                            ..UiRect::all(Val::Px(10.))
+                        },
+                        ..default()
+                    },
+                    background_color: Color::rgb(0.5, 0.5, 0.5).into(),
+                    ..default()
+                })
+                .with_children(|parent| {
+                    spawn_leaderboard(parent, asset_server.load("fonts/Saira.ttf"));
+                });
+        });
+}
+
 #[derive(Component)]
 struct ArenaArea;
 
