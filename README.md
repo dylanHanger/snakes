@@ -139,10 +139,10 @@ At the beginning of each turn, the following information is provided to every **
 ...
 <lifetimeN> <xN> <yN>
 <number of snakes>
-<id0> <length> <x1 y1 x2 y2 x3 y3 ...>
-<id1> <length> <x1 y1 x2 y2 x3 y3 ...>
+<id0> <kills> <deaths> <length> <x1 y1 x2 y2 x3 y3 ...>
+<id1> <kills> <deaths> <length> <x1 y1 x2 y2 x3 y3 ...>
 
-<idN> <length> <x1 y1 x2 y2 x3 y3 ...>
+<idN> <kills> <deaths> <length> <x1 y1 x2 y2 x3 y3 ...>
 ```
 Dead snakes will have a length of 0 (and therefore will have no coordinates).
 You then have some `timeout` (default: 250) milliseconds to compute your move. When it is ready, print it to standard out.
