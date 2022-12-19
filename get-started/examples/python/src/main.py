@@ -26,7 +26,7 @@ if __name__ == "__main__":
 
         num_snakes = int(input())
         for i in range(num_snakes):
-            snake_id, length, *body = input().split()
+            snake_id, kills, deaths, length, *body = input().split()
 
         # Compute an action
         action = random.randint(0, 3)
