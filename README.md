@@ -182,7 +182,7 @@ while True:
         num_snakes = int(input())
         for _ in range(num_snakes):
             # Read the snake
-            (id, length, *body) = input().split()
+            (id, kills, deaths, length, *body) = input().split()
 
             # Do some processing
             print(f"Snake {id} is {length} long", file=sys.stderr)
