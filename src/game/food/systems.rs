@@ -41,7 +41,7 @@ pub fn spawn_food_system(
         .insert(GridScale::square(0.5))
         .insert(Collidable)
         .insert(Rottable)
-        .insert(Food::new(food_config.last_for_turns));
+        .insert(Food::new(food_config.initial_lifetime));
 }
 
 pub fn eat_food_system(
@@ -55,7 +55,7 @@ pub fn eat_food_system(
     for (snake_ent, mut snake, snake_pos) in snakes.iter_mut() {
         for (food_ent, food, food_pos) in food.iter() {
             if snake_pos == food_pos {
-                let growth = (food_config.growth_amount as f32 * food.get_factor()).round() as i32;
+                let growth = (food_config.initial_value as f32 * food.get_factor()).round() as i32;
                 if growth < 0 {
                     let shrinkage = growth.unsigned_abs();
                     if let Some(new_length) = snake.length.checked_sub(shrinkage) {
@@ -85,8 +85,9 @@ pub fn rotting_system(
     mut processed_entities: ResMut<DespawnedFoods>,
 ) {
     for (e, mut food) in rottable_foods.iter_mut() {
-        food.value -= 0.1;
-        if food.value < 0. && !processed_entities.contains(&e) {
+        if let Some(new_lifetime) = food.lifetime.checked_sub(1) {
+            food.lifetime = new_lifetime;
+        } else if !processed_entities.contains(&e) {
             commands.entity(e).despawn();
             processed_entities.insert(e);
         }

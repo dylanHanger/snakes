@@ -24,11 +24,11 @@ pub struct Turn {
     pub timer: Timer,
     pub wait_for_all: bool,
 
-    pub current: u64,
-    pub max: u64,
+    pub current: u32,
+    pub max: u32,
 }
 impl Turn {
-    pub fn new(duration: Duration, wait_for_all: bool, max_turns: u64) -> Self {
+    pub fn new(duration: Duration, wait_for_all: bool, max_turns: u32) -> Self {
         Self {
             ready: false,
             requested: false,
@@ -48,7 +48,7 @@ impl Turn {
 impl From<TurnConfig> for Turn {
     fn from(config: TurnConfig) -> Self {
         Self::new(
-            Duration::from_millis(config.turn_time),
+            Duration::from_millis(config.turn_time.into()),
             config.wait_for_all,
             config.max_turns,
         )

@@ -43,7 +43,7 @@ Initially, an apple is worth `value` (default: 5). As the apple decays, this wil
 At the halfway point in its decay, the apple becomes rotten and eating it will shrink your snake.
 After eating the apple, your snake will grow by one each turn for $v$ turns.
 
-$$ v_t = \lfloor V \times ({l_t \over l_0} \times 2 - 1) \rceil $$
+$$ v_t = \lfloor v_0 \times ({l_t \over l_0} \times 2 - 1) \rceil $$
 
 where $l_i$ is the apple's remaining lifetime.
 
@@ -124,24 +124,27 @@ You can use any executable for your own custom AI agent. All communication betwe
 When the game starts, the following information is sent once
 ```
 <arena width> <arena height>
-<your snake id>
+<food lifetime> <food value>
+<number of players> <your id>
+<number of turns> <timeout>
 ```
+If `wait: true` is set in the `config.yaml`, then `timeout` will be `-1`.
 
 ### Update Loop
-At the beginning of each turn, the following information is provided to every **living** snake
+At the beginning of each turn, the following information is provided to every **living** snake.
 ```
 <number of apples>
-<apple0_x> <apple0_y>
-<apple1_x> <apple1_y>
+<lifetime0> <x0> <y0>
+<lifetime1> <x1> <y1>
 ...
-<appleN_x> <appleN_y>
-<number of living snakes>
+<lifetimeN> <xN> <yN>
+<number of snakes>
 <id0> <length> <x1 y1 x2 y2 x3 y3 ...>
 <id1> <length> <x1 y1 x2 y2 x3 y3 ...>
-...
+
 <idN> <length> <x1 y1 x2 y2 x3 y3 ...>
 ```
-If a snake is dead, it will not be included in the update.
+Dead snakes will have a length of 0 (and therefore will have no coordinates).
 You then have some `timeout` (default: 250) milliseconds to compute your move. When it is ready, print it to standard out.
 
 #### Possible Moves
@@ -165,14 +168,16 @@ import sys
 import random
 
 width, height = input().split()
-my_snake = input()
+value, lifetime = input().split()
+num_players, my_id = input().split()
+num_turns, timeout = input().split()
 
 while True:
     try:
         num_apples = int(input())
         for _ in range(num_apples):
             # Read the food
-            apple_x, apple_y = input().split()
+            lifetime, apple_x, apple_y = input().split()
 
         num_snakes = int(input())
         for _ in range(num_snakes):

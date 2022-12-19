@@ -2,6 +2,7 @@ use bevy::prelude::{Commands, Query, Res, ResMut, With};
 use std::fs::File;
 use std::io::Write;
 
+use crate::game::food::config::FoodConfig;
 use crate::game::food::prelude::Food;
 use crate::game::grid::prelude::{GameGrid, GridPosition};
 use crate::game::players::prelude::{PlayerId, Players};
@@ -17,6 +18,7 @@ pub fn create_replay(
     seed: Res<RngSeed>,
     grid: Res<GameGrid>,
     players: Res<Players>,
+    food: Res<FoodConfig>,
 ) -> Result<(), std::io::Error> {
     if !config.record {
         return Ok(());
@@ -34,6 +36,8 @@ pub fn create_replay(
     writeln!(replay, "{}", seed.0)?;
     // Write the game size to the file
     writeln!(replay, "{} {}", grid.width, grid.height)?;
+    // Write the food config to the file
+    writeln!(replay, "{} {}", food.initial_lifetime, food.initial_value)?;
     // For each player, write their ID and name
     for (player, details) in players.iter() {
         writeln!(replay, "{} {}", player.id, details.name)?;
@@ -56,7 +60,7 @@ pub fn record_replay(
 
     // Save food
     for (position, food) in food.iter() {
-        write!(replay, "{:.1} {} {} ", food.value, position.x, position.y)?;
+        write!(replay, "{} {} {} ", food.lifetime, position.x, position.y)?;
     }
     writeln!(replay)?;
 

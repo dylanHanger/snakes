@@ -173,8 +173,10 @@ fn add_players(app: &mut App, player_details: Players) {
 }
 
 fn add_turns(app: &mut App, turn_config: TurnConfig) {
+    let turn = Turn::from(turn_config);
     app.add_loopless_state(GameState::Running)
-        .insert_resource(Turn::from(turn_config))
+        .insert_resource(turn_config)
+        .insert_resource(turn)
         .add_system_set_to_stage(
             CoreStage::PreUpdate,
             ConditionSet::new()

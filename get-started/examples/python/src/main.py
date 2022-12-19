@@ -13,23 +13,20 @@ if __name__ == "__main__":
         debugpy.wait_for_client()
 
     width, height = input().split()
-    width = int(width)
-    height = int(height)
-
-    my_id = int(input())
+    food_value, food_lifetime = input().split()
+    num_players, my_id = input().split()
+    num_turns, timeout = input().split()
 
     while True:
         # Read the current game state
         # WARNING: This is just an example. You should use better data structures.
         num_apples = int(input())
-        apples = []
         for i in range(num_apples):
-            apples.append([int(j) for j in input().split()])
+            lifetime, (x, y) = input().split()
 
         num_snakes = int(input())
-        snakes = []
         for i in range(num_snakes):
-            snakes.append([int(j) for j in input().split()])
+            snake_id, length, *body = input().split()
 
         # Compute an action
         action = random.randint(0, 3)

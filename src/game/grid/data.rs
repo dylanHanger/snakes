@@ -76,7 +76,7 @@ impl Default for GameGrid {
 #[derive(Clone, Copy, PartialEq)]
 pub enum CellType {
     Empty,
-    Food { value: f32 },
+    Food { lifetime: u32 },
     Snake { id: Option<u32> },
 }
 #[derive(Deref)]

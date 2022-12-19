@@ -5,20 +5,19 @@ use bevy::{
 
 #[derive(Component)]
 pub struct Food {
-    initial_value: f32,
-    pub value: f32,
+    initial_lifetime: u32,
+    pub lifetime: u32,
 }
 impl Food {
-    pub fn new(last_for_turns: u32) -> Self {
-        let initial_value = last_for_turns as f32 / 10.0;
+    pub fn new(lifetime: u32) -> Self {
         Self {
-            initial_value,
-            value: initial_value,
+            initial_lifetime: lifetime,
+            lifetime,
         }
     }
 
     pub fn get_factor(&self) -> f32 {
-        (self.value / self.initial_value) * 2. - 1.
+        (self.lifetime as f32 / self.initial_lifetime as f32) * 2. - 1.
     }
 }
 

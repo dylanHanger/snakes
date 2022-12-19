@@ -2,12 +2,12 @@ use bevy::prelude::{Commands, Entity, Input, KeyCode, Query, Res, ResMut, With, 
 use bevy_turborand::{DelegatedRng, RngComponent, TurboRand};
 
 use crate::game::{
-    food::prelude::Food,
+    food::{config::FoodConfig, prelude::Food},
     grid::prelude::{CellType, GameGrid, GridPosition, Map},
     movement::prelude::{Direction, MoveIntent},
-    players::prelude::PlayerId,
+    players::prelude::{PlayerId, Players},
     snakes::prelude::{Snake, SnakeSegment},
-    turns::prelude::Turn,
+    turns::{config::TurnConfig, prelude::Turn},
     Actor,
 };
 
@@ -71,13 +71,36 @@ pub fn kill_external_agents(mut commands: Commands, agents: Query<Entity, With<C
     }
 }
 
-pub fn init_external_agents(agents: Query<(&CustomAi, &PlayerId)>, grid: Res<GameGrid>) {
+pub fn init_external_agents(
+    agents: Query<(&CustomAi, &PlayerId)>,
+    grid: Res<GameGrid>,
+    players: Res<Players>,
+    food_config: Res<FoodConfig>,
+    turn_config: Res<TurnConfig>,
+) {
     for (agent, player) in agents.iter() {
         // The game size
         agent.send(format!("{} {}\n", grid.width, grid.height));
 
-        // Your snake ID
-        agent.send(format!("{}\n", player.id));
+        // The food details
+        agent.send(format!(
+            "{} {}\n",
+            food_config.initial_lifetime, food_config.initial_value
+        ));
+
+        // The number of snakes and our snake ID
+        agent.send(format!("{} {}\n", players.len(), player.id));
+
+        // The turn details
+        agent.send(format!(
+            "{} {}\n",
+            turn_config.max_turns,
+            if turn_config.wait_for_all {
+                -1
+            } else {
+                turn_config.turn_time as i64
+            }
+        ));
     }
 }
 
@@ -97,43 +120,60 @@ pub fn request_turn_system(mut turn: ResMut<Turn>) {
 
 pub fn external_update_system(
     agents: Query<&CustomAi, With<Actor>>,
-    snakes: Query<(&GridPosition, &Snake, Option<&PlayerId>)>,
+    snakes: Query<(Option<&GridPosition>, Option<&Snake>, &PlayerId)>,
     segments: Query<&GridPosition, With<SnakeSegment>>,
-    food: Query<&GridPosition, With<Food>>,
+    food: Query<(Entity, &GridPosition, &Food)>,
+    players: Res<Players>,
 ) {
-    let mut sorted_snakes = snakes
+    let mut player_info = snakes
         .iter()
-        .collect::<Vec<(&GridPosition, &Snake, Option<&PlayerId>)>>();
-    sorted_snakes.sort_by_key(|(_, _, p)| {
-        if let Some(player) = p {
-            player.id
-        } else {
-            u32::MAX
-        }
-    });
+        .map(|(position, snake, player)| {
+            let score = players.get(player).unwrap().score;
+            let body = position.and_then(|pos| {
+                snake.map(|snake| {
+                    let body_parts = snake
+                        .body
+                        .iter()
+                        .map(|&body_part| *segments.get(body_part).unwrap())
+                        .collect::<Vec<_>>();
+                    let mut body = vec![*pos];
+                    body.extend(body_parts);
+                    body
+                })
+            });
+
+            (*player, score, body)
+        })
+        .collect::<Vec<_>>();
+    player_info.sort_by_key(|(p, _, _)| p.id);
+
+    let mut sorted_food = food.iter().collect::<Vec<_>>();
+    sorted_food.sort_by_key(|(e, _, _)| e.index());
+
     for agent in agents.iter() {
         // Send food
         agent.send(format!("{}\n", food.iter().count()));
-        for position in food.iter() {
-            agent.send(format!("{} {}\n", position.x, position.y))
+        for (_, position, food) in food.iter() {
+            agent.send(format!("{} {} {}\n", food.lifetime, position.x, position.y))
         }
 
         // Send snakes
-        agent.send(format!("{}\n", sorted_snakes.len()));
-        for (position, snake, player) in &sorted_snakes {
-            if let Some(player) = player {
-                agent.send(format!("{} ", player.id));
-            } else {
-                agent.send("-1 ".to_string());
-            }
-            let length = 1 + snake.body.len();
-            agent.send(format!("{} {} {}", length, position.x, position.y));
-            for &body_part in &snake.body {
-                if let Ok(position) = segments.get(body_part) {
-                    agent.send(format!(" {} {}", position.x, position.y))
+        agent.send(format!("{}\n", player_info.len()));
+        for (player, score, body) in player_info.iter() {
+            agent.send(format!(
+                "{} {} {} {}",
+                player.id,
+                score.kills,
+                score.deaths,
+                body.as_ref().map_or(0, |body| body.len())
+            ));
+
+            if let Some(body) = body {
+                for body_part in body.iter() {
+                    agent.send(format!(" {} {}", body_part.x, body_part.y));
                 }
             }
-            agent.send("\n".to_string());
+            agent.send("\n".into());
         }
     }
 }
@@ -158,7 +198,9 @@ pub fn ai_moves_system(
                 id: player.map(|p| p.id),
             };
         } else if let Some(food) = food {
-            map[position] = CellType::Food { value: food.value };
+            map[position] = CellType::Food {
+                lifetime: food.lifetime,
+            };
             food_positions.push(position);
         }
     }
@@ -192,7 +234,8 @@ pub fn ai_moves_system(
 
                 if agent > &BuiltinAi::Medium {
                     let tile = map[*food_pos];
-                    if let CellType::Food { value } = tile {
+                    if let CellType::Food { lifetime } = tile {
+                        let value = lifetime as f32 / 10.;
                         utility += value.floor() as i32 - d;
                     }
                 }
