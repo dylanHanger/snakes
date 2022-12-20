@@ -157,10 +157,8 @@ pub fn external_update_system(
     for agent in agents.iter() {
         // Send food
         agent.send(format!("{}\n", food.iter().count()));
-        println!("sent: {}", food.iter().count());
         for (_, position, food) in food.iter() {
             agent.send(format!("{} {} {}\n", food.lifetime, position.x, position.y));
-            println!("sent: {} {} {}", food.lifetime, position.x, position.y);
         }
 
         // Send snakes
@@ -172,22 +170,13 @@ pub fn external_update_system(
                 score.deaths,
                 body.as_ref().map_or(0, |body| body.len())
             ));
-            print!(
-                "sent: {} {} {} {}",
-                player.id,
-                score.kills,
-                score.deaths,
-                body.as_ref().map_or(0, Vec::len)
-            );
 
             if let Some(body) = body {
                 for body_part in body.iter() {
                     agent.send(format!(" {} {}", body_part.x, body_part.y));
-                    print!(" {} {}", body_part.x, body_part.y);
                 }
             }
             agent.send("\n".into());
-            println!();
         }
     }
 }
