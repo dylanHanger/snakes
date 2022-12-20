@@ -28,6 +28,7 @@ players:
 
   - Monty:
       type: custom
+      silent: false
       executable: python
       args:
         - monty.py
