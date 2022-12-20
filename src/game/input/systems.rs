@@ -158,7 +158,6 @@ pub fn external_update_system(
         }
 
         // Send snakes
-        agent.send(format!("{}\n", player_info.len()));
         for (player, score, body) in player_info.iter() {
             agent.send(format!(
                 "{} {} {} {}",
