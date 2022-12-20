@@ -4,8 +4,12 @@ height: 32
 
 turns: 1500
 timeout: 25
-wait: false
-record: false
+wait: true
+
+replays:
+  record: true
+  path: replays/
+  format: "{seed}-{time:%Y-%m-%dT%H-%M-%S}"
 
 respawn: 10
 
