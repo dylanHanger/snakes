@@ -1,7 +1,8 @@
-use bevy::prelude::{Commands, Entity, Input, KeyCode, Query, Res, ResMut, With, Without};
+use bevy::prelude::{Commands, Entity, Input, KeyCode, Or, Query, Res, ResMut, With, Without};
 use bevy_turborand::{DelegatedRng, RngComponent, TurboRand};
 
 use crate::game::{
+    death::prelude::Respawning,
     food::{config::FoodConfig, prelude::Food},
     grid::prelude::{CellType, GameGrid, GridPosition, Map},
     movement::prelude::{Direction, MoveIntent},
@@ -120,7 +121,10 @@ pub fn request_turn_system(mut turn: ResMut<Turn>) {
 
 pub fn external_update_system(
     agents: Query<&CustomAi, With<Actor>>,
-    snakes: Query<(Option<&GridPosition>, Option<&Snake>, &PlayerId)>,
+    snakes: Query<
+        (Option<&GridPosition>, Option<&Snake>, &PlayerId),
+        Or<((With<Snake>, With<GridPosition>), With<Respawning>)>, // Either it is has a snake and a position, or it is respawning
+    >,
     segments: Query<&GridPosition, With<SnakeSegment>>,
     food: Query<(Entity, &GridPosition, &Food)>,
     players: Res<Players>,
@@ -153,8 +157,10 @@ pub fn external_update_system(
     for agent in agents.iter() {
         // Send food
         agent.send(format!("{}\n", food.iter().count()));
+        println!("sent: {}", food.iter().count());
         for (_, position, food) in food.iter() {
-            agent.send(format!("{} {} {}\n", food.lifetime, position.x, position.y))
+            agent.send(format!("{} {} {}\n", food.lifetime, position.x, position.y));
+            println!("sent: {} {} {}", food.lifetime, position.x, position.y);
         }
 
         // Send snakes
@@ -166,13 +172,22 @@ pub fn external_update_system(
                 score.deaths,
                 body.as_ref().map_or(0, |body| body.len())
             ));
+            print!(
+                "sent: {} {} {} {}",
+                player.id,
+                score.kills,
+                score.deaths,
+                body.as_ref().map_or(0, Vec::len)
+            );
 
             if let Some(body) = body {
                 for body_part in body.iter() {
                     agent.send(format!(" {} {}", body_part.x, body_part.y));
+                    print!(" {} {}", body_part.x, body_part.y);
                 }
             }
             agent.send("\n".into());
+            println!();
         }
     }
 }
