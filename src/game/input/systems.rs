@@ -2,7 +2,7 @@ use bevy::prelude::{Commands, Entity, Input, KeyCode, Or, Query, Res, ResMut, Wi
 use bevy_turborand::{DelegatedRng, RngComponent, TurboRand};
 
 use crate::game::{
-    death::prelude::Respawning,
+    death::prelude::Dead,
     food::{config::FoodConfig, prelude::Food},
     grid::prelude::{CellType, GameGrid, GridPosition, Map},
     movement::prelude::{Direction, MoveIntent},
@@ -123,7 +123,7 @@ pub fn external_update_system(
     agents: Query<&CustomAi, With<Actor>>,
     snakes: Query<
         (Option<&GridPosition>, Option<&Snake>, &PlayerId),
-        Or<((With<Snake>, With<GridPosition>), With<Respawning>)>, // Either it is has a snake and a position, or it is respawning
+        Or<((With<Snake>, With<GridPosition>), With<Dead>)>, // Either it is has a snake and a position, or it is dead
     >,
     segments: Query<&GridPosition, With<SnakeSegment>>,
     food: Query<(Entity, &GridPosition, &Food)>,
