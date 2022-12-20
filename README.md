@@ -138,7 +138,6 @@ At the beginning of each turn, the following information is provided to every **
 <lifetime1> <x1> <y1>
 ...
 <lifetimeN> <xN> <yN>
-<number of snakes>
 <id0> <kills> <deaths> <length> <x1 y1 x2 y2 x3 y3 ...>
 <id1> <kills> <deaths> <length> <x1 y1 x2 y2 x3 y3 ...>
 ...
