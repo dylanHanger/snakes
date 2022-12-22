@@ -1,24 +1,4 @@
 #[macro_export]
-macro_rules! readln {
-    ($t: ty) => {
-        {
-            let mut line = String::new();
-            std::io::stdin().read_line(&mut line).unwrap();
-            line.trim().parse::<$t>().unwrap()
-        }
-    };
-    ($($t:ty),+ $(,)?) => {
-        {
-            let mut line = String::new();
-            std::io::stdin().read_line(&mut line).unwrap();
-            let mut iter = line.trim().split_whitespace();
-
-            ($(iter.next().unwrap().parse::<$t>().unwrap()),+)
-        }
-    };
-}
-
-#[macro_export]
 macro_rules! read {
     ($t:ty) => {{
         use std::io::Read;

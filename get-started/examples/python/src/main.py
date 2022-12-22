@@ -24,8 +24,7 @@ if __name__ == "__main__":
         for i in range(num_apples):
             lifetime, (x, y) = input().split()
 
-        num_snakes = int(input())
-        for i in range(num_snakes):
+        for i in range(num_players):
             snake_id, kills, deaths, length, *body = input().split()
 
         # Compute an action
