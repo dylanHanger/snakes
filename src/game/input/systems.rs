@@ -1,5 +1,8 @@
-use bevy::prelude::{Commands, Entity, Input, KeyCode, Or, Query, Res, ResMut, With, Without};
+use bevy::prelude::{
+    Color, Commands, Entity, Input, KeyCode, Or, Query, Res, ResMut, With, Without,
+};
 use bevy_turborand::{DelegatedRng, RngComponent, TurboRand};
+use colored::Colorize;
 
 use crate::game::{
     death::prelude::Dead,
@@ -105,11 +108,18 @@ pub fn init_external_agents(
     }
 }
 
-pub fn external_error_system(agents: Query<&CustomAi>) {
-    for agent in agents.iter() {
+pub fn external_error_system(agents: Query<(&CustomAi, &PlayerId)>, players: Res<Players>) {
+    for (agent, id) in agents.iter() {
         if let Some(msg) = agent.recv_err() {
             if !agent.silent {
-                println!("{}", msg);
+                let name = players.get(id).map_or("Anonymous", |p| &p.name);
+                let color = players.get(id).map_or(Color::WHITE, |p| p.color);
+                let text_color = colored::Color::TrueColor {
+                    r: (color.r() * u8::MAX as f32) as u8,
+                    g: (color.g() * u8::MAX as f32) as u8,
+                    b: (color.b() * u8::MAX as f32) as u8,
+                };
+                println!("[{}] {msg}", name.color(text_color));
             }
         }
     }
