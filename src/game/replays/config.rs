@@ -47,7 +47,7 @@ impl ReplayConfig {
                         time.to_rfc3339()
                     }
                 }
-                _ => format!("{{{}}}", name),
+                _ => format!("{{{name}}}"),
             }
         });
 
