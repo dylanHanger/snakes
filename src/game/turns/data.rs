@@ -1,19 +1,25 @@
 use std::time::Duration;
 
 use bevy::{
-    prelude::{Resource, StageLabel},
+    prelude::{Resource, SystemSet},
     time::Timer,
 };
 
 use super::config::TurnConfig;
 
-#[derive(StageLabel, Debug, Hash, PartialEq, Eq, Clone, Copy)]
+#[derive(SystemSet, Debug, Hash, PartialEq, Eq, Clone, Copy)]
+#[system_set(base)]
 pub enum TurnStage {
     PreTurn,
+    PreTurnFlush,
     Request,
+    RequestFlush,
     PostRequest,
+    PostRequestFlush,
     Simulate,
+    SimulateFlush,
     PostSimulate,
+    PostSimulateFlush,
 }
 
 #[derive(Resource)]

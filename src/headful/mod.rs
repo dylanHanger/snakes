@@ -7,28 +7,22 @@ use bevy::{
     diagnostic::DiagnosticsPlugin,
     log::LogPlugin,
     math::{Vec2, Vec3, Vec3Swizzles},
-    prelude::{
-        default, App, Color, Commands, CoreStage, Plugin, Query, Res, SystemSet, Transform, *,
-    },
+    prelude::{default, App, Color, Commands, Plugin, Query, Res, Transform, *},
     render::texture::ImagePlugin,
     sprite::Sprite,
     time::TimePlugin,
     ui::UiRect,
-    window::{WindowPlugin, Windows},
+    window::{PrimaryWindow, WindowPlugin, WindowResolution},
 };
 use bevy_easings::{Ease, EaseFunction, EasingType, EasingsPlugin};
 use copypasta::{ClipboardContext, ClipboardProvider};
-use iyes_loopless::{
-    prelude::{ConditionSet, IntoConditionalSystem},
-    state::{CurrentState, NextState},
-};
 
 use crate::game::{
     food::prelude::Food,
     grid::prelude::{GameGrid, GridPosition, GridScale},
     input::prelude::keyboard_moves_system,
     players::prelude::{PlayerId, Players},
-    turns::prelude::{Turn, TurnStage},
+    turns::prelude::Turn,
     GameState, RngSeed,
 };
 
@@ -40,31 +34,32 @@ impl Plugin for HeadfulPlugin {
         app.add_plugins(
             DefaultPlugins
                 .build()
-                .disable::<CorePlugin>()
+                .disable::<TaskPoolPlugin>()
+                .disable::<TypeRegistrationPlugin>()
+                .disable::<FrameCountPlugin>()
                 .disable::<TimePlugin>()
                 .disable::<LogPlugin>()
                 .disable::<DiagnosticsPlugin>()
                 .set(WindowPlugin {
-                    window: WindowDescriptor {
+                    primary_window: Some(Window {
                         title: "Snakes".to_string(),
-                        width: 800.0,
-                        height: 600.0,
+                        resolution: WindowResolution::new(800., 600.),
                         ..default()
-                    },
+                    }),
                     ..default()
                 })
                 .set(ImagePlugin::default_nearest()),
         )
         .add_plugin(EasingsPlugin);
 
-        #[cfg(debug_assertions)]
-        {
-            use bevy_inspector_egui::widgets::InspectorQuery;
+        // #[cfg(debug_assertions)]
+        // {
+        //     use bevy_inspector_egui::widgets::InspectorQuery;
 
-            type RootUINode = InspectorQuery<Entity, (With<Node>, Without<Parent>)>;
+        //     type RootUINode = InspectorQuery<Entity, (With<Node>, Without<Parent>)>;
 
-            app.add_plugin(bevy_inspector_egui::InspectorPlugin::<RootUINode>::new());
-        }
+        //     app.add_plugin(bevy_inspector_egui::InspectorPlugin::<RootUINode>::new());
+        // }
 
         // Add everything related to displaying the game
         add_rendering(app);
@@ -73,31 +68,26 @@ impl Plugin for HeadfulPlugin {
         add_ui(app);
 
         app.add_startup_system(setup_cameras);
-        app.add_system_set_to_stage(
-            TurnStage::Request,
-            SystemSet::new()
-                .label("input")
-                // Read input from the keyboard
-                .with_system(keyboard_moves_system),
-        );
+        // Read input from the keyboard
+        app.add_system(keyboard_moves_system);
     }
 }
 
 fn add_ui(app: &mut App) {
     app.add_startup_system(setup_ui)
-        .add_startup_system_to_stage(StartupStage::PostStartup, init_scoreboard)
+        .add_startup_system(init_scoreboard.in_base_set(StartupSet::PostStartup))
         .add_system(update_scoreboard)
         .add_system(update_progress_bar)
-        .add_system_set(
-            ConditionSet::new()
-                .with_system(button_interactions)
-                .with_system(pause_button_text)
-                .with_system(toggle_pause.run_if(button_clicked::<PauseButton>))
-                .with_system(step_once.run_if(button_clicked::<StepButton>))
-                .with_system(copy_seed.run_if(button_clicked::<SeedButton>))
-                .into(),
-        );
+        .add_systems((
+            button_interactions,
+            pause_button_text,
+            // Button interactions
+            toggle_pause.run_if(button_clicked::<PauseButton>),
+            step_once.run_if(button_clicked::<StepButton>),
+            copy_seed.run_if(button_clicked::<SeedButton>),
+        ));
 }
+
 #[derive(Component)]
 struct ArenaArea;
 
@@ -636,24 +626,27 @@ fn copy_seed(seed: Res<RngSeed>) {
     // TODO: Some kind of feedback that the seed was copied
 }
 
-fn step_once(mut commands: Commands, current_state: Res<CurrentState<GameState>>) {
+fn step_once(current_state: Res<State<GameState>>, mut next_state: ResMut<NextState<GameState>>) {
     if current_state.0 != GameState::Step {
-        commands.insert_resource(NextState(GameState::Step));
+        next_state.set(GameState::Step);
     }
 }
 
-fn toggle_pause(mut commands: Commands, current_state: Res<CurrentState<GameState>>) {
+fn toggle_pause(
+    current_state: Res<State<GameState>>,
+    mut next_state: ResMut<NextState<GameState>>,
+) {
     if current_state.0 != GameState::Paused {
-        commands.insert_resource(NextState(GameState::Paused));
+        next_state.set(GameState::Paused);
     } else {
-        commands.insert_resource(NextState(GameState::Running));
+        next_state.set(GameState::Running)
     }
 }
 
 fn pause_button_text(
     pause_buttons: Query<&Children, (With<Button>, With<PauseButton>)>,
     mut text: Query<&mut Text, With<Parent>>,
-    current_state: Res<CurrentState<GameState>>,
+    current_state: Res<State<GameState>>,
 ) {
     for children in pause_buttons.iter() {
         let mut text = text.get_mut(children[0]).unwrap();
@@ -736,13 +729,7 @@ fn spawn_playback_controls(parent: &mut ChildBuilder, font: Handle<Font>) {
 }
 
 fn add_rendering(app: &mut App) {
-    app.add_system_set_to_stage(
-        CoreStage::PostUpdate,
-        SystemSet::new()
-            .label("rendering")
-            .with_system(color_food)
-            .with_system(draw_grid_objects),
-    );
+    app.add_systems((color_food, draw_grid_objects).in_base_set(CoreSet::PostUpdate));
 }
 
 fn color_food(mut foods: Query<(&mut Sprite, &mut GridScale, &Food)>) {
@@ -770,10 +757,10 @@ fn draw_grid_objects(
     arena: Query<(&Node, &GlobalTransform), With<ArenaArea>>,
     mut objects: Query<(&GridPosition, &GridScale, &mut Transform), Without<Node>>,
     grid: Res<GameGrid>,
-    windows: Res<Windows>,
+    primary_window: Query<&Window, With<PrimaryWindow>>,
 ) {
     if let Ok((node, transform)) = arena.get_single() {
-        if let Some(window) = windows.get_primary() {
+        if let Ok(window) = primary_window.get_single() {
             let window_size = Vec2::new(window.width(), window.height());
             let node_size = node.size();
 

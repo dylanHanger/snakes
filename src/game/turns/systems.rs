@@ -1,8 +1,12 @@
-use bevy::prelude::{Query, Res, ResMut, Time, With};
+use bevy::prelude::{Query, Res, ResMut, Time, With, NextState};
 
-use crate::game::{movement::prelude::MoveIntent, Actor};
+use crate::game::{movement::prelude::MoveIntent, Actor, GameState};
 
 use super::data::*;
+
+pub fn pause_after_step(mut next_state: ResMut<NextState<GameState>>) {
+    next_state.set(GameState::Paused)
+}
 
 pub fn turns_finished(turn: Res<Turn>) -> bool {
     turn.current >= turn.max

@@ -6,6 +6,7 @@ use std::{
     path::PathBuf,
 };
 
+use base64::{Engine, engine::general_purpose};
 use bevy::{
     prelude::{default, Color},
     utils::HashMap,
@@ -109,7 +110,7 @@ impl<'de> Deserialize<'de> for GameConfig {
 
         let seed = seed.unwrap_or_else(|| {
             let s = rand::thread_rng().gen::<u64>().to_string();
-            base64::encode(s)
+            general_purpose::STANDARD_NO_PAD.encode(s)
         });
 
         let default_colors = vec![
