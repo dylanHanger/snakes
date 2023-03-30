@@ -89,7 +89,7 @@ impl Plugin for SnakesPlugin {
                 .pipe(|result: In<Result<(), std::io::Error>>| result.0.unwrap())
                 .run_if(turn_ready)
                 .run_if(resource_exists::<ReplayWriter>())
-                .in_base_set(TurnStage::Request),
+                .in_base_set(TurnSet::Request),
         );
 
         // Add core gameplay mechanics
@@ -111,10 +111,11 @@ impl Plugin for SnakesPlugin {
 
 #[derive(Debug, Clone, Copy, Default, Eq, PartialEq, Hash, States)]
 pub enum GameState {
-    Paused,
-    Step,
     #[default]
     Running,
+    Paused,
+    Step,
+    GameOver,
 }
 
 fn add_stages(app: &mut App) {
@@ -122,25 +123,25 @@ fn add_stages(app: &mut App) {
     app.configure_sets(
         (
             CoreSet::UpdateFlush,
-            TurnStage::PreTurn,
-            TurnStage::PreTurnFlush,
-            TurnStage::Request,
-            TurnStage::RequestFlush,
-            TurnStage::PostRequest,
-            TurnStage::PostRequestFlush,
-            TurnStage::Simulate,
-            TurnStage::SimulateFlush,
-            TurnStage::PostSimulate,
-            TurnStage::PostSimulateFlush,
+            TurnSet::PreTurn,
+            TurnSet::PreTurnFlush,
+            TurnSet::Request,
+            TurnSet::RequestFlush,
+            TurnSet::PostRequest,
+            TurnSet::PostRequestFlush,
+            TurnSet::Simulate,
+            TurnSet::SimulateFlush,
+            TurnSet::PostSimulate,
+            TurnSet::PostSimulateFlush,
             CoreSet::PostUpdate,
         )
             .chain(),
     )
-    .add_system(apply_system_buffers.in_base_set(TurnStage::PreTurnFlush))
-    .add_system(apply_system_buffers.in_base_set(TurnStage::RequestFlush))
-    .add_system(apply_system_buffers.in_base_set(TurnStage::PostRequestFlush))
-    .add_system(apply_system_buffers.in_base_set(TurnStage::SimulateFlush))
-    .add_system(apply_system_buffers.in_base_set(TurnStage::PostSimulateFlush));
+    .add_system(apply_system_buffers.in_base_set(TurnSet::PreTurnFlush))
+    .add_system(apply_system_buffers.in_base_set(TurnSet::RequestFlush))
+    .add_system(apply_system_buffers.in_base_set(TurnSet::PostRequestFlush))
+    .add_system(apply_system_buffers.in_base_set(TurnSet::SimulateFlush))
+    .add_system(apply_system_buffers.in_base_set(TurnSet::PostSimulateFlush));
 }
 
 fn add_players(app: &mut App, player_details: Players) {
@@ -168,12 +169,12 @@ fn add_turns(app: &mut App, turn_config: TurnConfig) {
         .add_system(
             pause_after_step
                 .run_if(in_state(GameState::Step).and_then(turn_ready))
-                .in_base_set(TurnStage::PostSimulate),
+                .in_base_set(TurnSet::PostSimulate),
         )
         .add_system(
             request_turn_system
                 .run_if(not(turn_requested))
-                .in_base_set(TurnStage::Request),
+                .in_base_set(TurnSet::Request),
         )
         .add_system(
             end_turn_system
@@ -188,13 +189,13 @@ fn add_food(app: &mut App, food_config: FoodConfig) {
         .add_system(
             spawn_food_system
                 .run_if(not(turn_requested).and_then(can_spawn_food))
-                .in_base_set(TurnStage::PreTurn),
+                .in_base_set(TurnSet::PreTurn),
         )
         .add_system(
             rotting_system
                 .run_if(turn_ready)
                 .after(eat_food_system)
-                .in_base_set(TurnStage::PostSimulate),
+                .in_base_set(TurnSet::PostSimulate),
         );
 }
 
@@ -203,9 +204,9 @@ fn add_simulation(app: &mut App) {
         slither_system
             .pipe(movement_system)
             .run_if(turn_ready)
-            .in_base_set(TurnStage::Simulate),
+            .in_base_set(TurnSet::Simulate),
     )
-    .add_systems((collision_system, eat_food_system).in_base_set(TurnStage::PostSimulate));
+    .add_systems((collision_system, eat_food_system).in_base_set(TurnSet::PostSimulate));
 }
 
 fn add_death(app: &mut App, death_config: DeathConfig) {
@@ -214,19 +215,19 @@ fn add_death(app: &mut App, death_config: DeathConfig) {
         .add_system(
             respawn_system
                 .run_if(not(turn_requested))
-                .in_base_set(TurnStage::PreTurn),
+                .in_base_set(TurnSet::PreTurn),
         )
         .add_system(
             death_system
                 .after(collision_system)
                 .after(eat_food_system)
-                .in_base_set(TurnStage::PostSimulate),
+                .in_base_set(TurnSet::PostSimulate),
         )
         .add_system(
             death_timer_system
                 .run_if(turn_ready)
                 .after(death_system)
-                .in_base_set(TurnStage::PostSimulate),
+                .in_base_set(TurnSet::PostSimulate),
         );
 }
 
@@ -239,15 +240,15 @@ fn add_input(app: &mut App) {
                 external_update_system.run_if(not(turn_requested)),
             )
                 .before(request_turn_system)
-                .in_base_set(TurnStage::Request),
+                .in_base_set(TurnSet::Request),
         )
         // Read input from the external agents
-        .add_system(external_moves_system.in_base_set(TurnStage::Request))
+        .add_system(external_moves_system.in_base_set(TurnSet::Request))
         .add_systems(
             (
                 limit_snake_moves.run_if(turn_ready),
                 default_snake_moves.run_if(turn_ready),
             )
-                .in_base_set(TurnStage::PostRequest),
+                .in_base_set(TurnSet::PostRequest),
         );
 }

@@ -52,14 +52,14 @@ impl Plugin for HeadfulPlugin {
         )
         .add_plugin(EasingsPlugin);
 
-        // #[cfg(debug_assertions)]
-        // {
-        //     use bevy_inspector_egui::widgets::InspectorQuery;
+        #[cfg(debug_assertions)]
+        {
+            use bevy_inspector_egui::quick::*;
 
-        //     type RootUINode = InspectorQuery<Entity, (With<Node>, Without<Parent>)>;
+            type RootUINode = (With<Node>, Without<Parent>);
 
-        //     app.add_plugin(bevy_inspector_egui::InspectorPlugin::<RootUINode>::new());
-        // }
+            app.add_plugin(FilterQueryInspectorPlugin::<RootUINode>::default());
+        }
 
         // Add everything related to displaying the game
         add_rendering(app);
@@ -166,7 +166,6 @@ fn setup_ui(mut commands: Commands, asset_server: Res<AssetServer>, seed: Res<Rn
                     ..default()
                 })
                 .with_children(|parent| {
-                    spawn_sidebar_header(parent, asset_server.load("fonts/Saira.ttf"));
                     spawn_scoreboard(parent, asset_server.load("fonts/Saira.ttf"));
                     spawn_progress_bar(parent);
                     spawn_playback_controls(parent, asset_server.load("fonts/Saira.ttf"));
@@ -218,30 +217,6 @@ fn update_progress_bar(
     }
 }
 
-fn spawn_sidebar_header(parent: &mut ChildBuilder, font: Handle<Font>) {
-    parent
-        .spawn(NodeBundle {
-            style: Style {
-                flex_basis: Val::Px(0.),
-                flex_shrink: 0.,
-                margin: UiRect::all(Val::Px(10.)),
-                justify_content: JustifyContent::Center,
-                ..default()
-            },
-            ..default()
-        })
-        .with_children(|parent| {
-            parent.spawn(TextBundle::from_section(
-                "Snakes!",
-                TextStyle {
-                    font,
-                    font_size: 32.,
-                    color: Color::BLACK,
-                },
-            ));
-        });
-}
-
 #[derive(Component)]
 struct ScoreboardUi;
 #[derive(Component)]
@@ -254,6 +229,7 @@ fn spawn_scoreboard(parent: &mut ChildBuilder, font: Handle<Font>) {
                 flex_direction: FlexDirection::Column,
                 padding: UiRect::all(Val::Px(5.)),
                 margin: UiRect {
+                    top: Val::Px(10.),
                     bottom: Val::Px(10.),
                     ..default()
                 },

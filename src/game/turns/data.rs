@@ -9,7 +9,7 @@ use super::config::TurnConfig;
 
 #[derive(SystemSet, Debug, Hash, PartialEq, Eq, Clone, Copy)]
 #[system_set(base)]
-pub enum TurnStage {
+pub enum TurnSet {
     PreTurn,
     PreTurnFlush,
     Request,
