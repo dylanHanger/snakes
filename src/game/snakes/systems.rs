@@ -14,24 +14,28 @@ pub fn slither_system(
     players: Res<Players>,
 ) {
     for (mut snake, position, intent, player) in q.iter_mut() {
-        // Ensure the tail grows with the snakes movement
+        // Spawn a new tail segment
         let mut segment = commands.spawn_empty();
         let mut bundle = SegmentBundle::new(*position);
         if let Some(player) = player {
-            let details = players.get(player).expect("The player should exist");
-            segment.insert(*player);
-            bundle.sprite.color = details.color * 0.6;
+            if let Some(details) = players.get(player) {
+                segment.insert(*player);
+                bundle.sprite.color = details.color * 0.6;
+            }
         }
         segment.insert(bundle);
 
+        // Add the new tail segment to the snake
         snake.body.insert(0, segment.id());
 
+        // Remove the last segment if the snake is too long
         while snake.body.len() >= snake.length as usize {
             if let Some(tail) = snake.body.pop() {
                 commands.entity(tail).despawn()
             }
         }
 
+        // Set the new direction of the snake
         snake.direction = intent.direction;
     }
 }
