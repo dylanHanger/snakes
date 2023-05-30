@@ -43,7 +43,7 @@ impl Plugin for HeadfulPlugin {
                 .set(WindowPlugin {
                     primary_window: Some(Window {
                         title: "Snakes".to_string(),
-                        resolution: WindowResolution::new(800., 600.),
+                        resolution: WindowResolution::new(900., 580.),
                         ..default()
                     }),
                     ..default()
@@ -705,7 +705,8 @@ fn spawn_playback_controls(parent: &mut ChildBuilder, font: Handle<Font>) {
 }
 
 fn add_rendering(app: &mut App) {
-    app.add_systems((color_food, draw_grid_objects).in_base_set(CoreSet::PostUpdate));
+    app.add_startup_system(spawn_grid_background)
+        .add_systems((color_food, draw_grid_objects).in_base_set(CoreSet::PostUpdate));
 }
 
 fn color_food(mut foods: Query<(&mut Sprite, &mut GridScale, &Food)>) {
@@ -726,6 +727,22 @@ fn color_food(mut foods: Query<(&mut Sprite, &mut GridScale, &Food)>) {
         let size = lerp(0.6, 0.3, alpha);
         scale.x = size;
         scale.y = size;
+    }
+}
+
+fn spawn_grid_background(mut commands: Commands, grid: Res<GameGrid>) {
+    // I don't like having an entity for every grid square but oh well
+    for x in 0..grid.width {
+        for y in 0..grid.height {
+            let color = Color::rgb(0.05, 0.05, 0.05); // Very dark grey
+            commands
+                .spawn(SpriteBundle {
+                    sprite: Sprite { color, ..default() },
+                    ..default()
+                })
+                .insert(GridScale::square(0.95)) // Almost a full square
+                .insert(GridPosition::new(x as i32, y as i32));
+        }
     }
 }
 

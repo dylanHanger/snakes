@@ -8,7 +8,7 @@ license = "Apache-2.0"
 
 [dependencies]
 base64 = "0.21.0"
-bevy = { version = "0.10.0", features = ["wayland", "serialize"] }
+bevy = { version = "0.10.1", features = ["wayland", "serialize"] }
 bevy-inspector-egui = "0.18.1"
 bevy_easings = { version = "0.10.0", features = ["ui"] }
 bevy_turborand = "0.5.0"

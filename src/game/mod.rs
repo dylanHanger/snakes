@@ -58,11 +58,12 @@ pub struct SnakesPlugin {
 impl Plugin for SnakesPlugin {
     fn build(&self, app: &mut App) {
         let config = read_config_from_file(&self.config_file).unwrap_or_else(|e| {
-            panic!(
-                "Failed to read config file {}: {:?}",
-                self.config_file.display(),
-                e
-            )
+            let message = match e {
+                crate::config::ConfigError::IOError(e) => e.to_string(),
+                crate::config::ConfigError::ParseError(e) => e.to_string(),
+            };
+            eprintln!("Could not read config file: {}", message);
+            std::process::exit(1);
         });
 
         let mut h = DefaultHasher::new();

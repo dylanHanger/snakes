@@ -21,7 +21,7 @@ impl GridPosition {
 
 // And a size that represents its size on the grid (it still only occupies one cell, this is for rendering only)
 #[derive(Component, Deref, DerefMut, Clone, Copy)]
-pub struct GridScale(Vec2);
+pub struct GridScale(pub Vec2);
 impl GridScale {
     pub fn square(side: f32) -> Self {
         Self(Vec2::new(side, side))
