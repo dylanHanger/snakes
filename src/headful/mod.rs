@@ -740,7 +740,7 @@ fn spawn_grid_background(mut commands: Commands, grid: Res<GameGrid>) {
                     sprite: Sprite { color, ..default() },
                     ..default()
                 })
-                .insert(GridScale::square(0.95)) // Almost a full square
+                .insert(GridScale::square(0.90)) // Almost a full square
                 .insert(GridPosition::new(x as i32, y as i32));
         }
     }
