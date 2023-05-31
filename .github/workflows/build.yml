@@ -86,7 +86,7 @@ jobs:
           ########## create tar.gz ##########
           echo "Archiving binary"
           RELEASE_NAME=snakes-${GITHUB_REF/refs\/tags\//}-${{ matrix.job.os-name }}-${{ matrix.job.arch }}
-          tar czvf $RELEASE_NAME.tar.gz assets -C $BINARY_PATH $BINARY_NAME
+          tar czvf $RELEASE_NAME.tar.gz -C $BINARY_PATH $BINARY_NAME
           ########## create sha256 ##########
           echo "Creating hash"
           if [[ ${{ runner.os }} == 'Windows' ]]; then

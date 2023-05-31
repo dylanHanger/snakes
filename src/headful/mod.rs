@@ -15,6 +15,7 @@ use bevy::{
     window::{PrimaryWindow, WindowPlugin, WindowResolution},
 };
 use bevy_easings::{Ease, EaseFunction, EasingType, EasingsPlugin};
+use bevy_embedded_assets::EmbeddedAssetPlugin;
 use copypasta::{ClipboardContext, ClipboardProvider};
 
 use crate::game::{
@@ -48,7 +49,8 @@ impl Plugin for HeadfulPlugin {
                     }),
                     ..default()
                 })
-                .set(ImagePlugin::default_nearest()),
+                .set(ImagePlugin::default_nearest())
+                .add_before::<AssetPlugin, _>(EmbeddedAssetPlugin),
         )
         .add_plugin(EasingsPlugin);
 

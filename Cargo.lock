@@ -577,6 +577,16 @@ dependencies = [
 ]
 
 [[package]]
+name = "bevy_embedded_assets"
+version = "0.7.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "2a1d4ecf67c553196cfdef560cf0748f1f699db5a86ed2aa211c958e2a379451"
+dependencies = [
+ "bevy",
+ "cargo-emit",
+]
+
+[[package]]
 name = "bevy_encase_derive"
 version = "0.10.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1202,6 +1212,12 @@ dependencies = [
  "thiserror",
  "vec_map",
 ]
+
+[[package]]
+name = "cargo-emit"
+version = "0.2.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "1582e1c9e755dd6ad6b224dcffb135d199399a4568d454bd89fe515ca8425695"
 
 [[package]]
 name = "cc"
@@ -3376,12 +3392,13 @@ dependencies = [
 
 [[package]]
 name = "snakes"
-version = "0.6.3"
+version = "0.7.0"
 dependencies = [
  "base64 0.21.0",
  "bevy",
  "bevy-inspector-egui",
  "bevy_easings",
+ "bevy_embedded_assets",
  "bevy_turborand",
  "chrono",
  "clap",
