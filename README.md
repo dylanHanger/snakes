@@ -178,7 +178,6 @@ while True:
             # Read the food
             lifetime, apple_x, apple_y = input().split()
 
-        num_snakes = int(input())
         for _ in range(num_snakes):
             # Read the snake
             (id, kills, deaths, length, *body) = input().split()
