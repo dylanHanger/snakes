@@ -23,7 +23,7 @@ use crate::game::{
     grid::prelude::{GameGrid, GridPosition, GridScale},
     input::prelude::keyboard_moves_system,
     players::prelude::{PlayerId, Players},
-    turns::prelude::Turn,
+    turns::{config::TurnConfig, prelude::Turn},
     GameState, RngSeed,
 };
 
@@ -68,6 +68,13 @@ impl Plugin for HeadfulPlugin {
 
         // Add everything related to the interface
         add_ui(app);
+
+        app.add_startup_system(
+            (|mut next_state: ResMut<NextState<GameState>>| {
+                next_state.set(GameState::Paused);
+            })
+            .run_if(|turn_config: Res<TurnConfig>| turn_config.start_paused),
+        );
 
         app.add_startup_system(setup_cameras);
         // Read input from the keyboard

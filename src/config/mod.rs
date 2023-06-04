@@ -6,7 +6,7 @@ use std::{
     path::PathBuf,
 };
 
-use base64::{Engine, engine::general_purpose};
+use base64::{engine::general_purpose, Engine};
 use bevy::{
     prelude::{default, Color},
     utils::HashMap,
