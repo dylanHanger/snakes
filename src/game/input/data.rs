@@ -58,9 +58,11 @@ impl CustomAi {
 
             loop {
                 let mut buf = String::new();
-                if f.read_line(&mut buf).is_ok() {
-                    let msg = buf.trim().to_string();
-                    output.send(msg).unwrap_or_default();
+                if let Ok(bytes) = f.read_line(&mut buf) {
+                    if bytes > 0 {
+                        let msg = buf.trim().to_string();
+                        output.send(msg).unwrap_or_default();
+                    }
                 } else {
                     return;
                 }
@@ -74,9 +76,11 @@ impl CustomAi {
             loop {
                 // Stderr
                 let mut buf = String::new();
-                if stderr_reader.read_line(&mut buf).is_ok() {
-                    let msg = buf.trim().to_string();
-                    err.send(msg).unwrap_or_default();
+                if let Ok(bytes) = stderr_reader.read_line(&mut buf) {
+                    if bytes > 0 {
+                        let msg = buf.trim().to_string();
+                        err.send(msg).unwrap_or_default();
+                    }
                 } else {
                     return;
                 }
