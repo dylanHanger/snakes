@@ -7,33 +7,33 @@ license = "Apache-2.0"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-base64 = "0.21.0"
+base64 = "0.21.2"
 bevy = { version = "0.10.1", features = ["wayland", "serialize"] }
 bevy_embedded_assets = "0.7.0"
-bevy-inspector-egui = "0.18.1"
+bevy-inspector-egui = "0.18.3"
 bevy_easings = { version = "0.10.0", features = ["ui"] }
 bevy_turborand = "0.5.0"
-chrono = "0.4.23"
-clap = { version = "4.0.29", features = ["derive"] }
+chrono = "0.4.26"
+clap = { version = "4.3.2", features = ["derive"] }
 colored = "2.0.0"
-copypasta = "0.8.1"
-crossbeam-channel = "0.5.6"
+copypasta = "0.8.2"
+crossbeam-channel = "0.5.8"
 rand = "0.8.5"
-regex = "1.7.0"
-serde = { version = "1.0.140", features = ["derive"] }
-serde_yaml = "0.9.1"
+regex = "1.8.4"
+serde = { version = "1.0.163", features = ["derive"] }
+serde_yaml = "0.9.21"
 wait-timeout = "0.2.0"
 
 # Enable a small amount of optimization in debug mode
 [profile.dev]
 opt-level = 1
 
-[profile.release]
-opt-level = 'z'   # optimise for size
-codegen-units = 1 # compile everything in serial, allowing for better optimsations
-strip = true      # strip symbols
-lto = true        # link-time optimisation
-
 # Enable high optimizations for dependencies (incl. Bevy), but not for our code:
 [profile.dev.package."*"]
 opt-level = 3
+
+# [profile.release]
+# opt-level = 'z'   # optimise for size
+# codegen-units = 1 # compile everything in serial, allowing for better optimsations
+# strip = true      # strip symbols
+# lto = true        # link-time optimisation
