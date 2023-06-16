@@ -99,10 +99,9 @@ pub fn init_external_agents(
         agent.send(format!(
             "{} {}\n",
             turn_config.max_turns,
-            if turn_config.wait_for_all {
-                -1
-            } else {
-                turn_config.turn_time as i64
+            match turn_config.turn_time {
+                Some(value) => value as i32,
+                None => -1,
             }
         ));
     }

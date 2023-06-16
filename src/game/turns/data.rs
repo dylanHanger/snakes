@@ -27,19 +27,19 @@ pub struct Turn {
     pub ready: bool,
     pub requested: bool,
 
-    pub timer: Timer,
-    pub wait_for_all: bool,
+    pub timer: Option<Timer>,
+    pub end_early: bool,
 
     pub current: u32,
     pub max: u32,
 }
 impl Turn {
-    pub fn new(duration: Duration, wait_for_all: bool, max_turns: u32) -> Self {
+    pub fn new(duration: Option<Duration>, end_early: bool, max_turns: u32) -> Self {
         Self {
             ready: false,
             requested: false,
-            timer: Timer::new(duration, bevy::time::TimerMode::Once),
-            wait_for_all,
+            timer: duration.map(|duration| Timer::new(duration, bevy::time::TimerMode::Once)),
+            end_early,
 
             current: 0,
             max: max_turns,
@@ -48,14 +48,16 @@ impl Turn {
     pub fn reset(&mut self) {
         self.ready = false;
         self.requested = false;
-        self.timer.reset();
+        if let Some(timer) = &mut self.timer {
+            timer.reset();
+        }
     }
 }
 impl From<TurnConfig> for Turn {
     fn from(config: TurnConfig) -> Self {
         Self::new(
-            Duration::from_millis(config.turn_time.into()),
-            config.wait_for_all,
+            config.turn_time.map(Duration::from_millis),
+            config.end_early,
             config.max_turns,
         )
     }

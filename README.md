@@ -74,11 +74,12 @@ seed: <seed for RNG>
 replays:
   record: <whether to record replays or not>
   path: <the folder to save replays under>
+  quick: <whether to end a turn early if everyone has made a move
   format: <format pattern for filenames>
 
 turns: <max turns>
-timeout: <allowed computation time>
-wait: <whether to wait for all snakes to compute a move>
+timeout: <false or time in milliseconds>
+quick: <whether to end a turn early if everyone has made a move>
 
 respawn: <number of turns a snake remains dead>
 
@@ -128,7 +129,7 @@ When the game starts, the following information is sent once
 <number of players> <your id>
 <number of turns> <timeout>
 ```
-If `wait: true` is set in the `config.yaml`, then `timeout` will be `-1`.
+If `timeout: false` is set in the `config.yaml`, then `timeout` will be `-1`.
 
 ### Update Loop
 At the beginning of each turn, the following information is provided to every **living** snake.
@@ -201,7 +202,7 @@ height: 32
 
 turns: 1500
 timeout: 25
-wait: false
+quick: false
 seed: the holy grail
 
 replays:
@@ -245,7 +246,7 @@ This can then be run with the command `./snakes[.exe] --config example.yaml`
 #### How can I debug my snake?
 If you are using Visual Studio Code, you can attach the debugger to your code after it has been launched by the game. Set
 ```yaml
-wait: true
+timeout: false
 ```
  in `config.yaml` to make sure the game waits for your snake if you hit any breakpoints.
 
