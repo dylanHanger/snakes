@@ -51,25 +51,40 @@ impl TurnConfig {
 #[cfg(test)]
 mod tests {
     use super::*;
+
     #[test]
-    fn test_deserialize_timeout() {
+    fn test_deserialize_timeout_with_value() {
         let yaml = r#"
-        timeout: 100
+            timeout: 100
         "#;
         let config: TurnConfig = serde_yaml::from_str(yaml).unwrap();
         assert_eq!(config.turn_time, Some(100));
+    }
+
+    #[test]
+    fn test_deserialize_timeout_with_false() {
         let yaml = r#"
-        timeout: false
+            timeout: false
         "#;
         let config: TurnConfig = serde_yaml::from_str(yaml).unwrap();
         assert_eq!(config.turn_time, None);
+    }
+
+    #[test]
+    fn test_deserialize_timeout_with_true() {
         let yaml = r#"
-        timeout: true
+            timeout: true
         "#;
-        assert!(serde_yaml::from_str::<TurnConfig>(yaml).is_err());
+        let result: Result<TurnConfig, _> = serde_yaml::from_str(yaml);
+        assert!(result.is_err());
+    }
+
+    #[test]
+    fn test_deserialize_timeout_with_invalid_value() {
         let yaml = r#"
-        timeout: 23.1
+            timeout: 23.1
         "#;
-        assert!(serde_yaml::from_str::<TurnConfig>(yaml).is_err());
+        let result: Result<TurnConfig, _> = serde_yaml::from_str(yaml);
+        assert!(result.is_err());
     }
 }
