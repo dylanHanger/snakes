@@ -72,9 +72,7 @@ height: <arena height>
 seed: <seed for RNG>
 
 replays:
-  record: <whether to record replays or not>
   path: <the folder to save replays under>
-  quick: <whether to end a turn early if everyone has made a move
   format: <format pattern for filenames>
 
 turns: <max turns>
@@ -206,7 +204,6 @@ quick: false
 seed: the holy grail
 
 replays:
-  record: true
   path: replays/
   format: "{seed}-{time:%Y-%m-%dT%H-%M-%S}"
 

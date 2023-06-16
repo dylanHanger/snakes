@@ -22,7 +22,7 @@ use crate::game::{
         config::{PlayerDetails, PlayerType},
         prelude::{PlayerId, Players},
     },
-    replays::config::ReplayConfig,
+    replays::config::OptionalReplayConfig,
     turns::config::TurnConfig,
 };
 
@@ -58,7 +58,7 @@ pub struct GameConfig {
 
     pub seed: String,
 
-    pub replays: ReplayConfig,
+    pub replays: OptionalReplayConfig,
 
     pub turns: TurnConfig,
     pub death: DeathConfig,
@@ -87,11 +87,10 @@ impl<'de> Deserialize<'de> for GameConfig {
 
             #[serde(flatten)]
             turns: TurnConfig,
-
             #[serde(flatten)]
             death: DeathConfig,
 
-            replays: ReplayConfig,
+            replays: OptionalReplayConfig,
 
             food: FoodConfig,
 
