@@ -81,7 +81,7 @@ pub fn respawn_system(
 
         let mut bundle = SnakeBundle::new(position);
         if let Some(player) = player {
-            let mut details = players.get_mut(player).expect("The player should exist");
+            let details = players.get_mut(player).expect("The player should exist");
             bundle.sprite.color = details.color;
             entity.insert(*player);
 
