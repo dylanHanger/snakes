@@ -19,8 +19,6 @@ use std::{
 
 use bevy::{
     app::AppExit,
-    diagnostic::{DiagnosticsPlugin, LogDiagnosticsPlugin},
-    log::LogPlugin,
     prelude::{
         apply_system_buffers, in_state, not, on_event, resource_exists, App, Component, Condition,
         CoreSet, Deref, In, IntoPipeSystem, IntoSystemConfig, IntoSystemConfigs,
@@ -68,10 +66,20 @@ impl Plugin for SnakesPlugin {
 
         let mut h = DefaultHasher::new();
         config.seed.hash(&mut h);
-        app.add_plugin(DiagnosticsPlugin::default())
-            .add_plugin(LogPlugin::default())
-            .add_plugin(LogDiagnosticsPlugin::default())
-            .add_plugin(RngPlugin::new().with_rng_seed(h.finish()));
+        app.add_plugin(RngPlugin::new().with_rng_seed(h.finish()));
+
+        #[cfg(debug_assertions)]
+        {
+            use bevy::diagnostic::{
+                DiagnosticsPlugin, FrameTimeDiagnosticsPlugin, LogDiagnosticsPlugin,
+            };
+            use bevy::log::LogPlugin;
+
+            app.add_plugin(FrameTimeDiagnosticsPlugin::default())
+                .add_plugin(DiagnosticsPlugin::default())
+                .add_plugin(LogPlugin::default())
+                .add_plugin(LogDiagnosticsPlugin::default());
+        }
 
         // Add stages for more fine grained control over when entities are added or removed
         add_stages(app);
