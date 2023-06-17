@@ -16,7 +16,7 @@ use crate::game::{
 #[derive(Component)]
 pub struct Snake {
     pub length: u32,
-    pub body: Vec<Entity>,
+    pub body: Vec<Entity>, // PERF: Consider making this a doubly linked list on segments?
 
     pub direction: Direction,
 }
@@ -67,7 +67,7 @@ impl SnakeBundle {
             collidable: Collidable,
             actor: Actor,
             position,
-            scale: GridScale::square(0.7),
+            scale: GridScale::square(0.2), // TODO: Make this dependent on texture size
             sprite: default(),
             transform: default(),
             global_transform: default(),
@@ -109,7 +109,7 @@ impl SegmentBundle {
             segment: SnakeSegment,
             collidable: Collidable,
             position,
-            scale: GridScale::square(0.6),
+            scale: GridScale::square(0.2), // TODO: Make this dependent on texture size
             sprite: default(),
             transform: default(),
             global_transform: default(),

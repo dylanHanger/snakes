@@ -20,7 +20,7 @@ pub fn slither_system(
         if let Some(player) = player {
             if let Some(details) = players.get(player) {
                 segment.insert(*player);
-                bundle.sprite.color = details.color * 0.6;
+                bundle.sprite.color = details.color;
             }
         }
         segment.insert(bundle);

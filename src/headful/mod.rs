@@ -1,4 +1,5 @@
 use std::{
+    f32::consts::{PI},
     ops::{Add, Mul},
     time::Duration,
 };
@@ -22,7 +23,9 @@ use crate::game::{
     food::prelude::Food,
     grid::prelude::{GameGrid, GridPosition, GridScale},
     input::prelude::keyboard_moves_system,
+    movement::prelude::Direction,
     players::prelude::{PlayerId, Players},
+    snakes::prelude::{Snake, SnakeSegment},
     turns::{config::TurnConfig, prelude::Turn},
     GameState, RngSeed,
 };
@@ -714,8 +717,9 @@ fn spawn_playback_controls(parent: &mut ChildBuilder, font: Handle<Font>) {
 }
 
 fn add_rendering(app: &mut App) {
-    app.add_startup_system(spawn_grid_background)
-        .add_systems((color_food, draw_grid_objects).in_base_set(CoreSet::PostUpdate));
+    app.add_startup_system(spawn_grid_background).add_systems(
+        (color_food, draw_grid_objects, draw_snake_textures).in_base_set(CoreSet::PostUpdate),
+    );
 }
 
 fn color_food(mut foods: Query<(&mut Sprite, &mut GridScale, &Food)>) {
@@ -786,6 +790,119 @@ fn draw_grid_objects(
                 transform.translation.x = x;
                 transform.translation.y = y;
             }
+        }
+    }
+}
+
+fn draw_snake_textures(
+    snakes: Query<(Entity, &Snake)>,
+    mut segments: Query<(&mut Handle<Image>, &mut Transform, &GridPosition), With<SnakeSegment>>,
+    asset_server: Res<AssetServer>,
+) {
+    const PI_TWO: f32 = PI / 2.;
+    // Some helpers
+    fn direction_between(a: GridPosition, b: GridPosition) -> Direction {
+        let delta = ((a.x - b.x), (a.y - b.y));
+
+        match delta {
+            (0, 1) => Direction::North,
+            (1, 0) => Direction::East,
+            (0, -1) => Direction::South,
+            (-1, 0) => Direction::West,
+            _ => unreachable!(),
+        }
+    }
+    fn dir_to_rot(dir: Direction) -> i8 {
+        match dir {
+            Direction::North => 0,
+            Direction::East => 3,
+            Direction::South => 2,
+            Direction::West => 1,
+        }
+    }
+
+    // Get the texture handles
+    // Abominable naming for the sake of alignment
+    let head_tex = asset_server.load("textures/snake/head.png");
+    let tail_tex = asset_server.load("textures/snake/tail.png");
+    let crnr_tex = asset_server.load("textures/snake/crnr.png");
+    let strt_tex = asset_server.load("textures/snake/strt.png");
+
+    // For each snake, set the texture of each segment in their body
+    for (e, snake) in snakes.iter() {
+        let (mut head_texture, mut head_transform, &head_pos) = segments.get_mut(e).unwrap();
+        *head_texture = head_tex.clone();
+
+        let rot = dir_to_rot(snake.direction) as f32 * PI_TWO;
+        head_transform.rotation = Quat::from_rotation_z(rot);
+
+        for i in 0..snake.body.len() {
+            let prev_part = if i == 0 {
+                Some(head_pos)
+            } else {
+                snake
+                    .body
+                    .get(i - 1)
+                    .and_then(|&e| segments.get(e).ok())
+                    .map(|(_s, _t, &p)| p)
+            };
+
+            let next_part = snake
+                .body
+                .get(i + 1)
+                .map(|&e| segments.get(e).unwrap())
+                .map(|(_s, _t, &p)| p);
+
+            let (mut curr_texture, mut curr_transform, curr_pos) = snake
+                .body
+                .get(i)
+                .map(|&e| segments.get_mut(e).unwrap())
+                .unwrap();
+
+            // Get the direction from the previous part
+            let dir_to_curr = prev_part.map(|p| direction_between(*curr_pos, p));
+
+            // Get the direction to the next part
+            let dir_to_next = next_part.map(|p| direction_between(p, *curr_pos));
+
+            // Decide what to draw
+            let (texture, rot): (&Handle<Image>, i8) = match (dir_to_curr, dir_to_next) {
+                // Tail
+                (Some(d), None) => (&tail_tex, dir_to_rot(d)),
+
+                // Straight (║)
+                (Some(Direction::North), Some(Direction::North)) => (&strt_tex, 0),
+                (Some(Direction::South), Some(Direction::South)) => (&strt_tex, 2),
+                // Straight (═)
+                (Some(Direction::East), Some(Direction::East)) => (&strt_tex, 1),
+                (Some(Direction::West), Some(Direction::West)) => (&strt_tex, 3),
+
+                // TODO: For corners, rotation is actually not necessarily symmetrical
+                // ╔ could look different if it represents NORTH then East,
+                //                   than if it represents WEST then SOUTH
+                // If there is a "pattern towards the head" then it will be "towards the tail" in the
+                // conjugate rotation
+
+                // Corner (╔)
+                (Some(Direction::North), Some(Direction::East)) => (&crnr_tex, 3),
+                (Some(Direction::West), Some(Direction::South)) => (&crnr_tex, 3),
+                // Corner (╗)
+                (Some(Direction::East), Some(Direction::South)) => (&crnr_tex, 2),
+                (Some(Direction::North), Some(Direction::West)) => (&crnr_tex, 2),
+                // Corner (╝)
+                (Some(Direction::East), Some(Direction::North)) => (&crnr_tex, 1),
+                (Some(Direction::South), Some(Direction::West)) => (&crnr_tex, 1),
+                // Corner (╚)
+                (Some(Direction::South), Some(Direction::East)) => (&crnr_tex, 0),
+                (Some(Direction::West), Some(Direction::North)) => (&crnr_tex, 0),
+
+                _ => unreachable!(),
+            };
+
+            *curr_texture = texture.clone();
+
+            let rot = rot as f32 * PI_TWO;
+            curr_transform.rotation = Quat::from_rotation_z(rot);
         }
     }
 }
