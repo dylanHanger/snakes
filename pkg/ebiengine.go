@@ -201,7 +201,13 @@ func (e *ebiEngine[S, A]) processTurn() error {
 				case r := <-reply:
 					replies <- agentReply[A]{id: id, action: r, time: time.Since(startTime)}
 				case <-effectiveCtx.Done():
-					replies <- agentReply[A]{id: id, err: effectiveCtx.Err(), time: time.Since(startTime)}
+					select {
+					// Check again in case of a tiebreak situation
+					case r := <-reply:
+						replies <- agentReply[A]{id: id, action: r, time: time.Since(startTime)}
+					default:
+						replies <- agentReply[A]{id: id, err: effectiveCtx.Err(), time: time.Since(startTime)}
+					}
 				}
 			}(id, p)
 		}
