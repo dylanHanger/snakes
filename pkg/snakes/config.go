@@ -224,7 +224,7 @@ func LoadConfig(configPath string) (*Config, error) {
 
 func isHexString(s string) bool {
 	l := len(s)
-	if l != 3 && l != 4 && l != 6 && l == 8 {
+	if l != 3 && l != 4 && l != 6 && l != 8 {
 		return false
 	}
 	for _, c := range s {
