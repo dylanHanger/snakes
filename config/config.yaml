@@ -5,7 +5,7 @@ height: 32
 
 # Game settings
 turns: 10000
-turnsPerSecond: 10000
+turnsPerSecond: -1
 
 seed: the holy grail
 

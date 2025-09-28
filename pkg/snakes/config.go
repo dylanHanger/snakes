@@ -96,7 +96,7 @@ func DefaultConfig() *Config {
 		Width:          32,
 		Height:         32,
 		MaxTurns:       1500,
-		TurnsPerSecond: 5,
+		TurnsPerSecond: 0,
 		RespawnTime:    10,
 		FoodCount:      1,
 		FoodLifetime:   0,
