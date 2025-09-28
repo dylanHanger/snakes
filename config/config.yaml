@@ -4,8 +4,8 @@ width: 32
 height: 32
 
 # Game settings
-turns: 100
-turnsPerSecond: 10
+turns: 10000
+turnsPerSecond: 10000
 
 seed: the holy grail
 

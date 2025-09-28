@@ -260,7 +260,7 @@ func (e *ebiEngine[S, A]) Draw(screen *ebiten.Image) {
 	screenWidth, screenHeight := screen.Bounds().Dx(), screen.Bounds().Dy()
 
 	// Calculate arena dimensions (left 80% of screen, full height)
-	arenaWidth := int(float64(screenWidth) * 1.0)
+	arenaWidth := screenWidth //int(float64(screenWidth) * 0.8)
 	arenaHeight := screenHeight
 
 	// Create arena image with calculated dimensions
