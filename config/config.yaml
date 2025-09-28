@@ -1,0 +1,52 @@
+# Default Snakes! Configuration
+---
+width: 32
+height: 32
+
+# Game settings
+turns: 100
+turnsPerSecond: 10
+
+seed: the holy grail
+
+respawn: 10
+
+# Food configuration
+food:
+  value: 5
+  lifetime: 1
+  count: 1
+
+# Player configurations
+players:
+  # - Ferris:
+  #     type: custom
+  #     silent: false
+  #     color: venetian red
+  #     executable: ../ferris-old/target/debug/ferris.exe
+
+  # - Keygan:
+  #     type: keyboard
+  #     timeout: 250
+  #     wait: true
+  #     keys:
+  #       north: w
+  #       west: a
+  #       south: s
+  #       east: d
+
+  - Randy:
+      type: random
+  - Easy:
+      type: builtin
+      difficulty: easy
+      color: green # you can choose colors
+  - Medium:
+      type: builtin
+      color: bluetiful # you can use Crayola color names
+      difficulty: medium
+
+  - Hard:
+      type: builtin
+      color: e6bc5c # you can also use hex strings (with or without a #)
+      difficulty: hard
