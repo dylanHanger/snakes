@@ -4,54 +4,61 @@ import (
 	"context"
 
 	"github.com/hajimehoshi/ebiten/v2"
+	"github.com/hajimehoshi/ebiten/v2/inpututil"
 )
 
 type keyboardAgent struct {
 	baseAgent
-	keyMap map[Direction]ebiten.Key
+	bindings    []keyBinding
+	inputBuffer chan Direction
+}
+
+type keyBinding struct {
+	direction Direction
+	key       ebiten.Key
 }
 
 func NewKeyboardAgent(keyMap map[Direction]ebiten.Key) *keyboardAgent {
+	bindings := make([]keyBinding, 0, len(keyMap))
+	for direction, key := range keyMap {
+		bindings = append(bindings, keyBinding{direction: direction, key: key})
+	}
 	return &keyboardAgent{
-		keyMap: keyMap,
+		bindings:    bindings,
+		inputBuffer: make(chan Direction),
+	}
+}
+
+func (a *keyboardAgent) PollInput() {
+	if a.ctx != nil {
+		select {
+		case <-a.ctx.Done():
+			return
+		default:
+		}
+	}
+
+	for _, binding := range a.bindings {
+		if inpututil.IsKeyJustPressed(binding.key) {
+			select {
+			case a.inputBuffer <- binding.direction:
+			default:
+			}
+		}
 	}
 }
 
 // Send implements pkg.Agent.
 func (a *keyboardAgent) Send(state State, ctx context.Context) (<-chan Direction, error) {
 	c := make(chan Direction)
-
-	myConfig := state.Players[state.Id]
-
 	go func() {
-		timeout, cancel := context.WithTimeout(ctx, myConfig.Timeout())
-		defer cancel()
 		defer close(c)
 
-		var d Direction
-
-		for {
-			// Check for key presses
-			for direction, key := range a.keyMap {
-				if ebiten.IsKeyPressed(key) {
-					d = direction
-					if myConfig.WaitFor() && timeout.Err() == context.DeadlineExceeded {
-						c <- d
-						return
-					}
-				}
-			}
-
-			// Also check if the context is done
-			select {
-			case <-ctx.Done():
-				c <- d
-				return
-			default:
-				// Keep polling for key presses
-			}
+		select {
+		case d := <-a.inputBuffer:
+			c <- d
+		case <-ctx.Done():
 		}
 	}()
-
 	return c, nil
 }

@@ -29,6 +29,10 @@ type ebiEngine[S, A any] struct {
 	isStepping   bool
 }
 
+type inputPoller interface {
+	PollInput()
+}
+
 func NewEbitenEngine[S, A any](g Game[S, A]) Engine[S, A] {
 	r, ok := g.(ebitenRenderable)
 	if !ok {
@@ -117,6 +121,8 @@ func (e *ebiEngine[S, A]) Update() error {
 		e.singleStep()
 	}
 
+	e.pollAgentInputs()
+
 	shouldProcessTurn := !e.isPaused && !e.game.IsGameOver()
 	if shouldProcessTurn {
 		select {
@@ -137,6 +143,14 @@ func (e *ebiEngine[S, A]) Update() error {
 		// return ebiten.Termination
 	}
 	return nil
+}
+
+func (e *ebiEngine[S, A]) pollAgentInputs() {
+	for _, p := range e.game.Players() {
+		if poller, ok := p.Agent().(inputPoller); ok {
+			poller.PollInput()
+		}
+	}
 }
 
 type agentReply[A any] struct {
