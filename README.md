@@ -27,28 +27,40 @@ The game loads configuration from `config/config.yaml` by default, you can chang
 Configure your game through the `config.yaml` file:
 
 ```yaml
-width: 20 # Board width
-height: 20 # Board height
+width: 32 # Board width
+height: 32 # Board height
 turns: 1500 # Maximum game turns
-turnsPerSecond: 10 # Game speed
+turnsPerSecond: 0 # 0 = run as fast as possible, >0 locks to that TPS
 
-respawn: 10 # Turns to wait before respawning
+respawn: 2 # Turns you miss while dead (0 = spawn next turn)
 
 food:
   value: 5 # Base value of food
-  lifetime: 100 # How long food remains (0 = forever)
+  lifetime: 50 # How long food remains (0 = forever)
   count: 1 # Number of food items on the board
 
 players:
-  - MyAgent:
+  - Ferris:
       type: custom
-      executable: /path/to/agent
-      arguments:
-        - arg0
-        - arg1
-      timeout: 250 # Milliseconds to wait for move
-      waitFor: false # Whether to block waiting for move
+      cmd: examples/ferris.exe
+      args:
+        - --difficulty
+        - hard
+      timeout: 250 # Per-player move budget in milliseconds
+      wait: false # If true, engine waits indefinitely for a move
+  - EasyBot:
+      type: builtin
+      difficulty: easy
+      color: bluetiful
+      timeout: 0 # 0 = use global turn duration
 ```
+
+Key notes:
+
+- `turnsPerSecond` controls how quickly the game clock advances. Setting it to `0` tells the engine to process turns as soon as inputs arrive.
+- Each player can override their own `timeout` (milliseconds) and `wait` behaviour. When `timeout` is `0`, the engine uses the global turn duration; with `wait: true`, the engine blocks until the agent replies.
+- Custom agents use `cmd` plus optional `args` instead of the older `executable` / `arguments` keys.
+- Optional fields such as `color` (hex or Crayola name) and `silent` still work as before.
 
 ## Agent Types
 
@@ -67,6 +79,27 @@ Custom agents communicate with the game via standard I/O:
 4. Repeat until game over
 
 See the `examples/` directory for sample implementations.
+
+### External Agent Protocol
+
+When a custom agent starts, Snakes! writes four initial lines:
+
+1. `<width> <height>`
+2. `<food_lifetime> <food_value>`
+3. `<player_count> <your_id>`
+4. `<max_turns> <timeout_ms>` (`-1` if `wait: true`)
+
+Each turn that the agent is alive, the engine sends:
+
+- A line containing the food count: `<apple_count>`
+- One line per food item: `<lifetime_remaining> <x> <y>`
+- One line per snake: `<id> <kills> <deaths> <segment_count> <x1> <y1> … <xN> <yN>`
+
+Clients should reply with a single line that starts with `n`, `e`, `s`, or `w` (case-insensitive).
+
+### Coordinate System
+
+All board coordinates use `(0,0)` in the top-left corner. `x` increases to the right, `y` increases as you move down the board.
 
 ## Differences from Rust Version (v1)
 
@@ -104,15 +137,6 @@ See the `examples/` directory for sample implementations.
 - Food decay mechanic (when enabled)
   - Although you should be aware of multiple food items, as well as no-decay food
 
-## Why Go?
-
-I wanted to learn Go, and the multi-threaded nature of Snakes! made it a perfect place to start.
-
-In addition to that, the original Rust code was way too complicated, since I made it while still learning both Rust and Bevy.
-Porting to Go gave me the opportunity to clean up the architecture and turn Snakes! into a much more thought out framework.
-You can expect to see some very cool things in the future!
-
 ## License
 
 [MIT License](LICENSE)
-

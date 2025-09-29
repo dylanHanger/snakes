@@ -69,7 +69,7 @@ type (
 	rawPlayerConfig struct {
 		Type       string            `yaml:"type"`
 		Silent     bool              `yaml:"silent,omitempty"`
-		Executable string            `yaml:"executable,omitempty"`
+		Command    string            `yaml:"cmd,omitempty"`
 		Args       []string          `yaml:"args,omitempty"`
 		Keys       map[string]string `yaml:"keys,omitempty"`
 		Difficulty string            `yaml:"difficulty,omitempty"`
@@ -260,7 +260,7 @@ func createAgent(cfg rawPlayerConfig) (pkg.Agent[State, Direction], error) {
 	switch cfg.Type {
 	case "custom":
 		// Create custom executable agent
-		agent := NewExternal(cfg.Executable, cfg.Args...)
+		agent := NewExternal(cfg.Command, cfg.Args...)
 		return agent, nil
 	case "keyboard":
 		// Create keyboard-controlled agent
