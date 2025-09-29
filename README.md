@@ -1,267 +1,167 @@
-﻿# Snakes!
- [![](https://dcbadge.vercel.app/api/server/zapH4Sz7wH)](https://discord.gg/zapH4Sz7wH)
+# Snakes!
 
-"Snake" is a classic arcade game where the player controls a snake which gets longer every time it eats. If the snake collides with anything, including itself (which is more likely to happen as it gets longer), it will die and its length will be reset. This is a client for a Snake AI competition, a coding challenge in which participants must write a program that will play a multiplayer version of Snake against other snake AIs. The snake that holds the record for the longest length throughout the course of the game is the winner!
+[![](https://dcbadge.limes.pink/api/server/zapH4Sz7wH)](https://discord.gg/zapH4Sz7wH)
 
-## Installation
+"Snake" is a classic arcade game where the player controls a snake which gets longer every time it eats. If the snake collides with anything, including itself (which is more likely to happen as it gets longer!), it will die and its length will be reset.
+"Snakes!" is an AI competition, a coding challenge in which participants must write a program that will play a multiplayer version of Snake against other snake AIs. The snake that holds the record for the longest length throughout the course of the game is the winner!
 
-Install Snakes! by cloning this repository and building with Cargo, or by downloading a [release](https://github.com/dylanHanger/snakes/releases)
+## Getting Started
 
-```bash
-  git clone https://github.com/dylanHanger/snakes
-  cd snakes
-  cargo build --release
+You can download a release build and run it like any other application.
+If you are so inclined, you can clone this repo and build it yourself.
+
+```
+git clone https://github.com/dylanHanger/snakes
+cd snakes
+go run ./cmd/snakes --config config/config.yaml
 ```
 
-## Run Locally
-
-Simply install and run `snakes[.exe]`
-```
-USAGE:
-    snakes[.exe] [OPTIONS]
-
-OPTIONS:
-    -c, --config <FILE>    The file to read game settings from [default: config.yaml]
-    -h, --headless         Run in headless mode, without any graphical output
-        --help             Print help information
-    -V, --version          Print version information
-```
+The game loads configuration from `config.yaml` by default, you can change this by providing the `--config FILE` command line argument.
 
 ## Gameplay
 
-The goal of the game is to become the longest snake.
-To do this you must eat fresh apples and avoid crashing.
-But remember, this is a multiplayer game, and the other snakes are trying to do the same thing.
+The primary goal of the game is to become the longest snake. To do this, you must eat fresh food and avoid crashing. But remember, this is a multiplayer game, and the other snakes are trying to do the same thing.
 
 ### Food
 
-There is always one apple on the board at any time.
-If one is eaten, another will immediately spawn at a random position.
-Each turn, the apples decay; becoming rotten and eventually disappearing.
+There is always at least one food on the board at any time. If one is eaten, another will immediately spawn at a random position. Each turn, the food decays; becoming rotten and eventually disappearing.
 
-Initially, an apple is worth `value` (default: 5). As the apple decays, this will decrease linearly.
-At the halfway point in its decay, the apple becomes rotten and eating it will shrink your snake.
-After eating the apple, your snake will grow by one each turn for $v$ turns.
+Initially food is worth some value (5 by default). As it decays, this will decrease linearly. At the halfway point, the food becomes rotten, and eating it will shrink your snake! After eating the food, your snake will grow by one each turn for $v_t$ turns, where $v_t$ is the value of the food at that point in time.
 
-$$ v_t = \lfloor v_0 \times ({l_t \over l_0} \times 2 - 1) \rceil $$
-
-where $l_i$ is the apple's remaining lifetime.
+$$ v_t = \lfloor v_0 \times (\frac{l_t}{l_0} \times 2 - 1) \rceil $$
+where $l_t$ is the food's remaining lifetime.
 
 ### Kills and Deaths
 
-When a snake attempts to move into a space that is occupied, the snake will die, and the occupant will be credited with a kill (you will lose a kill if it was a suicide). If two snakes collide head on, they both get credited with a kill. If a snake attempts to move out of the play grid, it is killed, but nobody is credited with a kill. If a snake's length shrinks below 1 (by eating rotten food), it will die.
-
-### Scoring
-
-Snakes are ranked according to their stats in the following order:
-
- 1. The maximum length the snake has achieved
- 2. The number of kills they have (more is better)
- 3. The number of deaths they have (less is better)
- 4. The current length of the snake
+When a snake attempts to move into a space that is occupied, the snake will die, and the occupant will be credited with a kill (you will instead lose a kill if it was a suicide).
+If two snakes both attempt to move into the same space and collide head on, they are both credited with a kill.
+If a snake attempts to move out of the play grid, it dies and nobody is credited with a kill.
+If a snake's length shrinks below 1 (by eating rotten food), it will die.
 
 ## Configuration
 
-You can configure the game settings via a YAML file. By default, this file is called `config.yaml`.
+Configure your game through the `config.yaml` file:
 
 ```yaml
----
-width: <arena width>
-height: <arena height>
+width: 32 # Board width
+height: 32 # Board height
+turns: 1500 # Maximum game turns
+turnsPerSecond: 0 # 0 = run as fast as possible
 
-seed: <seed for RNG>
-
-replays:
-  path: <the folder to save replays under>
-  format: <format pattern for filenames>
-
-turns: <max turns>
-timeout: <false or time in milliseconds>
-quick: <whether to end a turn early if everyone has made a move>
-
-respawn: <number of turns a snake remains dead>
+respawn: 2 # Turns you miss while dead (0 = spawn next turn)
 
 food:
-  value: <growth value of a fresh apple>
-  lifetime: <number of turns the apple lasts>
+  value: 5 # Initial value of food
+  lifetime: 50 # How long food remains (0 = forever)
+  count: 1 # Number of food items on the board at any point in time
 
 players:
-  # A custom snake AI
-  - <Snake name>:
+  - My Snake:
       type: custom
-      silent: <whether to suppress logging from this snake>
-      executable: <executable to run>
+      cmd: mysnake.exe
       args:
-        - <arg1>
-        - <arg2>
-        - ...
-        - <argN>
+        - --difficulty
+        - hard
+      timeout: 250 # Per-player move budget in milliseconds
+      wait: false # If true, the game won't progress until a move is submitted by this agent
 
-  # A keyboard controlled snake
-  - <Snake name>:
-      type: keyboard
-      keys:
-        north: <key for up>
-        west: <key for left>
-        south: <key for down>
-        east: <key for right>
-
-  # A snake with a built in AI
-  - <Snake name>:
+  - Easy Bot:
       type: builtin
-      difficulty: <easy | medium | hard>
+      difficulty: easy
+      color: red # You can set custom colors for your snake
 
-  # A snake that moves randomly
-  - <Snake name>:
-      type: random
-```
+   - Medium Bot:
+      type: builtin
+      difficulty: medium
+      color: pacific blue # You can use Crayola color names
 
-## Custom Agents
-You can use any executable for your own custom AI agent. All communication between the game and the agent is performed over standard I/O.
-
-### Game Initialization
-When the game starts, the following information is sent once
-```
-<arena width> <arena height>
-<food lifetime> <food value>
-<number of players> <your id>
-<number of turns> <timeout>
-```
-If `timeout: false` is set in the `config.yaml`, then `timeout` will be `-1`.
-
-### Update Loop
-At the beginning of each turn, the following information is provided to every **living** snake.
-```
-<number of apples>
-<lifetime0> <x0> <y0>
-<lifetime1> <x1> <y1>
-...
-<lifetimeN> <xN> <yN>
-<id0> <kills> <deaths> <length> <x1 y1 x2 y2 x3 y3 ...>
-<id1> <kills> <deaths> <length> <x1 y1 x2 y2 x3 y3 ...>
-...
-<idN> <kills> <deaths> <length> <x1 y1 x2 y2 x3 y3 ...>
-```
-Dead snakes will have a length of 0 (and therefore will have no coordinates).
-You then have some `timeout` (default: 250) milliseconds to compute your move. When it is ready, print it to standard out.
-
-#### Possible Moves
-| **Direction** | **Output**            | **Description**    |
-| ------------- | --------------------- | ------------------ |
-| North         | `0` \| `north` \| `n` | Turn **upwards**   |
-| East          | `1` \| `east` \| `e`  | Turn **right**     |
-| South         | `2` \| `south` \| `s` | Turn **downwards** |
-| West          | `3` \| `west` \| `w`  | Turn **left**      |
-
-Snakes cannot turn in the direction opposite to their current direction. For example, if you are moving North, an output of `2` (*South*) will be ignored.
-If you do not output a move in time, your snake will simply move forwards.
-
-#### Logging
-If you wish to log to the console, print to standard error instead of standard out.
-
-## Examples
-Here is an example of a Python agent, `monty.py`
-```python
-import sys
-import random
-
-width, height = input().split()
-value, lifetime = input().split()
-num_players, my_id = input().split()
-num_turns, timeout = input().split()
-
-while True:
-    try:
-        num_apples = int(input())
-        for _ in range(num_apples):
-            # Read the food
-            lifetime, apple_x, apple_y = input().split()
-
-        for _ in range(num_snakes):
-            # Read the snake
-            (id, kills, deaths, length, *body) = input().split()
-
-            # Do some processing
-            print(f"Snake {id} is {length} long", file=sys.stderr)
-
-        # Output a random move
-        print(random.randint(0, 3))
-
-    except(EOFError):
-        # If the game closes, we need to exit gracefully
-        exit()
-```
-
-And here is an example `example.yaml`
-```yaml
----
-width: 32
-height: 32
-
-turns: 1500
-timeout: 25
-quick: false
-seed: the holy grail
-
-replays:
-  path: replays/
-  format: "{seed}-{time:%Y-%m-%dT%H-%M-%S}"
-
-respawn: 10
-
-food:
-  value: 5
-  lifetime: 50
-
-players:
-  - Monty:
-      type: custom
-      silent: false
-      executable: python
-      args:
-        - monty.py
-
-  - Human:
-      type: keyboard
-      keys:
-        north: W
-        west: A
-        south: S
-        east: D
-
-  - Randy:
-      type: random
-
-  - Hard:
+   - Hard Bot:
       type: builtin
       difficulty: hard
+      color: fcd667 # Or you can use hex strings (with or without a '#')
 ```
-This can then be run with the command `./snakes[.exe] --config example.yaml`
+
+## Agent Types
+
+- **Custom**: External program that communicates via standard I/O
+- **Builtin**: Pre-programmed AI with difficulty levels (easy/medium/hard)
+- **Random**: Makes random moves
+- **Keyboard**: Human-controlled via keyboard input
+
+## Creating a Custom Agent
+
+Custom agents communicate with the game via standard I/O:
+
+1. Game sends initial configuration and board state
+2. Agent responds with a move direction (north/east/south/west)
+3. Game sends updated state
+4. Repeat until game over
+
+See the `examples/` directory for sample implementations in various languages.
+
+### Communication Protocol
+
+When a custom agent starts, Snakes! writes four initial lines:
+
+1. `<width> <height>`
+2. `<food_lifetime> <food_value>`
+3. `<player_count> <your_id>`
+4. `<max_turns> <timeout_ms>`
+
+If `wait: true` is set for your agent, then `<timeout_ms>` will be `-1`.
+
+Each turn that your snake is alive, the engine sends:
+
+- A line containing the food count: `<apple_count>`
+- One line per food item: `<lifetime_remaining> <x> <y>`
+- One line per snake: `<id> <kills> <deaths> <current_length> <x1> <y1> … <xN> <yN>`
+
+Dead snakes will have a length of 0 (and therefore no coordinates).
+
+#### Moving
+
+To submit a move, you must print a single line that starts with `n`, `e`, `s`, or `w` (case-insensitive).
+
+Snakes cannot turn in the direction opposite to their current direction.
+For example, if you are moving `North`, an output of `South` will be ignored, and you will continue moving `North`.
+If you do not output a move within your allotted time, your snake will simply move forwards.
+
+#### Logging
+
+While the agent must output their move on `stdout`, `stderr` can be used to "talk".
+Anything output on `stderr` gets displayed as a chat message.
+
+### Coordinate System
+
+All board coordinates use `(0,0)` in the top-left corner. `x` increases to the right, `y` increases as you move down the board.
 
 ## FAQ
 
-#### How can I debug my snake?
-If you are using Visual Studio Code, you can attach the debugger to your code after it has been launched by the game. Set
+### How can I debug my snake?
+
+It can be quite tricky to debug a program that you aren't launching directly, but you can probably attach the debugger after it has been launched by the engine (you'll have to figure this out yourself for your chosen language, sorry!).\
+I recommend setting
+
 ```yaml
-timeout: false
+wait: true
 ```
- in `config.yaml` to make sure the game waits for your snake if you hit any breakpoints.
 
-#### Can I cheat?
-Anything you can manage to do is a valid strategy, but I reserve the right to patch out any unintended exploits.
+for your snake in `config.yaml`. This will ensure that the game waits for you when you hit a breakpoint.
+Make liberal use of logging to `stderr` to see your snake's thought process too!
 
-#### What language should I code my snake in?
-Anything you want, as long as you can launch it as an executable that uses stdio.
+### Can I cheat?
 
-#### Isn't a whole game engine (Bevy) a little overkill?
-Yes. Yes it is.
+No, you cannot. The only rules are those built into the game itself. If you are able to accomplish something within those rules, I consider it to be a valid strategy. However, I do reserve the right to patch any unintended exploits.
 
-## Roadmap
+### What language should I code my snake in?
 
-- [x] A UI scoreboard
-- [x] Pausing
-- [x] Single Stepping
-- [ ] Replays (In progress)
-- [ ] An actual winner
-- [ ] Automated tournaments
-- [ ] Web based viewer and leaderboard
+Anything you want, as long as you can make it read and write over standard I/O.
+
+### Where do I start with something like this?
+
+Have a look at the examples to get an idea on how you can approach it.
+You can also join us on [Discord](https://discord.gg/zapH4Sz7wH) to ask for help or just hang out!
+
+## License
+
+[MIT License](LICENSE)

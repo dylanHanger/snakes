@@ -1,0 +1,65 @@
+# Default Snakes! Configuration
+---
+width: 32
+height: 32
+
+# Game settings
+turns: 1500
+turnsPerSecond: 0
+
+respawn: 10
+
+seed: snake byte
+
+# Food configuration
+food:
+  value: 5
+  lifetime: 0
+  count: 1
+
+# Player configurations
+players:
+  - Random Randy:
+      type: random # makes random moves
+
+  - Keyboard Keagan:
+      type: keyboard # controlled by a human player
+      timeout: 250 # Custom per-player timeouts
+      keys:
+        north: Up
+        west: Left
+        south: Down
+        east: Right
+
+  - External Eddie:
+      type: custom # a hand-coded AI communicating over stdio
+      silent: true # Prevent the output of chatty agents
+      wait: true # Useful for slow snakes, or when you are debugging
+      cmd: python
+      args:
+        - -c
+        - |
+          import sys;
+          w,h = [int(x) for x in input().split(' ')]
+          l,v = [int(x) for x in input().split(' ')]
+          n,i = [int(x) for x in input().split(' ')]
+          m,t = [int(x) for x in input().split(' ')]
+          turn = 0
+
+          directions = ['n', 'n', 'n', 'e', 's', 's', 's', 'w']
+          while True:
+            f = int(input())
+            for i in range(f):
+              r,x,y = [int(x) for x in input().split(' ')]
+            for p in range(n):
+              input()  # read the snake line
+
+            direction = directions[turn % len(directions)]
+            print(direction, file=sys.stdout)
+            print(direction, file=sys.stderr)
+            sys.stdout.flush()
+            turn += 1
+
+  - Hard Harry:
+      type: builtin # a built in basic AI to test yourself against
+      difficulty: hard # easy/medium/hard
