@@ -4,12 +4,12 @@ width: 32
 height: 32
 
 # Game settings
-turns: 10000
-turnsPerSecond: -1
+turns: 100
+turnsPerSecond: 0
 
 seed: the holy grail
 
-respawn: 10
+respawn: 2
 
 # Food configuration
 food:
@@ -36,6 +36,10 @@ players:
   #       east: d
 
   - Randy:
+      type: random
+  - Randier:
+      type: random
+  - Randiest:
       type: random
   - Easy:
       type: builtin

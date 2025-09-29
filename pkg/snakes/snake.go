@@ -1,9 +1,5 @@
 package snakes
 
-import (
-	"math/rand"
-)
-
 type Snake struct {
 	body   []GridPoint
 	length int
@@ -52,8 +48,8 @@ func (s *Snake) Move(d Direction) {
 
 	// no move supplied
 	if d == DirNone && current == DirNone {
-		// never moved before (init randomly)
-		d = DirCardinals[rand.Intn(4)]
+		// default to a consistent direction until the agent issues commands
+		d = DirCardinals[0]
 	} else if d == DirNone {
 		d = current
 	}

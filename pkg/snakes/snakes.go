@@ -2,9 +2,9 @@ package snakes
 
 import (
 	"errors"
+	"fmt"
 	"image/color"
 	"math"
-	"math/rand/v2"
 	"time"
 
 	"github.com/dylanHanger/snakes/pkg"
@@ -27,7 +27,7 @@ type (
 		config  *Config
 		players map[int]player
 
-		random      *rand.Rand
+		random      *pkg.SharedRand
 		state       state
 		renderState renderState
 	}
@@ -97,8 +97,11 @@ func (g *Game) Reset() error {
 	g.state.snakes = make(map[int]*Snake)
 	g.state.food = make(map[GridPoint]int)
 
-	for id := range g.players {
+	for id, player := range g.players {
 		g.state.snakes[id] = new(Snake)
+		if setter, ok := player.Agent().(interface{ SetRandom(*pkg.SharedRand) }); ok {
+			setter.SetRandom(pkg.GetRandomFromSeed(fmt.Sprintf("%s:%d", g.config.Seed, id)))
+		}
 	}
 
 	g.spawnSnakes()

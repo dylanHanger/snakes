@@ -3,11 +3,14 @@ package snakes
 import (
 	"context"
 	"fmt"
+
+	"github.com/dylanHanger/snakes/pkg"
 )
 
 type baseAgent struct {
-	ctx  context.Context
-	talk chan string
+	ctx    context.Context
+	talk   chan string
+	random *pkg.SharedRand
 }
 
 func (a *baseAgent) Start(ctx context.Context) error {
@@ -33,4 +36,12 @@ func (a *baseAgent) Talk(ctx context.Context) <-chan string {
 		}()
 	}
 	return a.talk
+}
+
+func (a *baseAgent) SetRandom(r *pkg.SharedRand) {
+	a.random = r
+}
+
+func (a *baseAgent) Random() *pkg.SharedRand {
+	return a.random
 }

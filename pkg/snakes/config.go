@@ -158,6 +158,7 @@ func LoadConfig(configPath string) (*Config, error) {
 	config := &Config{
 		Width:        raw.Width,
 		Height:       raw.Height,
+		Seed:         raw.Seed,
 		MaxTurns:     raw.Turns,
 		RespawnTime:  raw.Respawn,
 		FoodLifetime: raw.Food.Lifetime,

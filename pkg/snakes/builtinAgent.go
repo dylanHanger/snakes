@@ -2,13 +2,9 @@ package snakes
 
 import (
 	"context"
-	"fmt"
 	"math"
-	"math/rand/v2"
 	"slices"
 	"sort"
-
-	"github.com/dylanHanger/snakes/pkg"
 )
 
 type BuiltInDifficulty string
@@ -22,7 +18,6 @@ const (
 type builtInAgent struct {
 	baseAgent
 	difficulty BuiltInDifficulty
-	random     *rand.Rand
 }
 
 func NewBuiltInAgent(difficulty BuiltInDifficulty) *builtInAgent {
@@ -49,10 +44,6 @@ func (a *builtInAgent) computeMove(state State) Direction {
 		// Safe fallback if we're dead or our snake doesn't exist in the state
 		// FIXME: Find whatever is causing dead agents to be asked for moves
 		return DirNone
-	}
-
-	if a.random == nil {
-		a.random = pkg.GetRandomFromSeed(fmt.Sprintf("%s%d", state.Seed, state.Id))
 	}
 
 	switch a.difficulty {
@@ -318,7 +309,11 @@ func (a *builtInAgent) computeMoveHard(state State) Direction {
 		return unsafeDirections[0]
 	}
 
-	return DirCardinals[a.random.IntN(4)]
+	r := a.random
+	if r != nil {
+		return DirCardinals[r.IntN(len(DirCardinals))]
+	}
+	return DirCardinals[0]
 }
 
 // A* pathfinding

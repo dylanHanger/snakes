@@ -5,6 +5,7 @@ import (
 	"hash/fnv"
 	"image/color"
 	"math/rand/v2"
+	"sync"
 	"time"
 
 	"github.com/hajimehoshi/ebiten/v2"
@@ -29,11 +30,30 @@ type Game[S, A any] interface {
 	IsGameOver() bool
 }
 
-func GetRandomFromSeed(seed string) *rand.Rand {
+type SharedRand struct {
+	mu  sync.Mutex
+	rng *rand.Rand
+}
+
+func (sr *SharedRand) IntN(n int) int {
+	sr.mu.Lock()
+	defer sr.mu.Unlock()
+	return sr.rng.IntN(n)
+}
+
+func (sr *SharedRand) Float64() float64 {
+	sr.mu.Lock()
+	defer sr.mu.Unlock()
+	return sr.rng.Float64()
+}
+
+func GetRandomFromSeed(seed string) *SharedRand {
 	seedHash := fnv.New64()
 	seedHash.Write([]byte(seed))
 	seedValue := seedHash.Sum64()
-	return rand.New(rand.NewPCG(seedValue, seedValue))
+	return &SharedRand{
+		rng: rand.New(rand.NewPCG(seedValue, seedValue)),
+	}
 }
 
 func CalculateTurnDuration(turnsPerSecond float64) time.Duration {
