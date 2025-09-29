@@ -1,4 +1,4 @@
-name: Discord
+name: Discord Notification
 
 on:
   release:
@@ -7,15 +7,10 @@ on:
 jobs:
   notify:
     runs-on: ubuntu-latest
-
     steps:
-      - shell: bash
-        run: |
-
-
-      - name: Discord notification
+      - name: Send Discord notification
+        uses: Ilshidur/action-discord@0.4.0
         env:
           DISCORD_WEBHOOK: ${{ secrets.DISCORD_WEBHOOK }}
-        uses: Ilshidur/action-discord@0.3.2
         with:
-          args: '<@&1001811147831386182>, Snakes! ${{ github.event.release.tag_name }} has been released. Download it here ${{ github.event.release.html_url }}'
+          args: "<@&1001811147831386182>, Snakes! {{ EVENT_PAYLOAD.release.tag_name }} has been released. Download it here {{ EVENT_PAYLOAD.release.html_url }}"

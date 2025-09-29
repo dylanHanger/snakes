@@ -7,99 +7,68 @@ on:
 
 jobs:
   build:
-    name: Building ${{ matrix.job.target }}
-    runs-on: ${{ matrix.job.os }}
-
+    runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
       matrix:
-        rust: [nightly]
-        job:
-          - target: x86_64-pc-windows-msvc
-            os: windows-latest
-            os-name: windows
-            arch: x86_64
-            bin-postfix: .exe
-
-          - target: x86_64-unknown-linux-gnu
-            os: ubuntu-latest
+        include:
+          - os: ubuntu-latest
             os-name: linux
-            arch: x86_64
-            bin-postfix: ""
-
-          - target: x86_64-apple-darwin
-            os: macos-latest
+            arch: amd64
+            bin-ext: ""
+          - os: macos-latest
             os-name: macos
-            arch: x86_64
-            bin-postfix: ""
+            arch: amd64
+            bin-ext: ""
+          - os: windows-latest
+            os-name: windows
+            arch: amd64
+            bin-ext: .exe
 
     steps:
-      - name: Installing Rust toolchain
-        uses: actions-rs/toolchain@v1
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-go@v5
         with:
-          toolchain: ${{ matrix.rust }}
-          profile: minimal
-          override: true
+          go-version: "1.23"
 
-      - name: Checkout repository
-        uses: actions/checkout@v2
+      - name: Install Linux dependencies
+        if: runner.os == 'Linux'
+        run: |
+          sudo apt-get update
+          sudo apt install -y \
+           libc6-dev \
+           libgl1-mesa-dev \
+           libxcursor-dev \
+           libxi-dev \
+           libxinerama-dev \
+           libxrandr-dev \
+           libxxf86vm-dev \
+           libasound2-dev \
+           pkg-config
 
-      - name: Installing deps
+      - name: Build
+        run: |
+          echo "Building for ${{ runner.os }}/amd64"
+          go build -ldflags="-s -w" -o snakes${{ matrix.bin-ext }} ./cmd/snakes
+
+      - name: Package
         shell: bash
         run: |
-          if [[ ${{ matrix.job.os }} == ubuntu-latest ]]; then
-            sudo apt update
-            sudo apt-get install -y libx11-dev libasound2-dev libudev-dev libwayland-dev libxkbcommon-dev
-          elif [[ ${{ matrix.job.os }} == macos-latest ]]; then
-            brew update --preinstall
-            brew install michaeleisel/zld/zld
-          fi
-
-      - name: Cargo build
-        uses: actions-rs/cargo@v1
-        with:
-          command: build
-          toolchain: ${{ matrix.rust }}
-          args: --release --target ${{ matrix.job.target }}
-
-      - name: Installing strip command
-        shell: bash
-        run: |
-          if [[ ${{ matrix.job.target }} == aarch64-unknown-linux-gnu ]]; then
-              sudo apt update
-              sudo apt-get install -y binutils-aarch64-linux-gnu
-          fi
-
-      - name: Packaging final binary
-        shell: bash
-        run: |
-          BINARY_PATH=target/${{ matrix.job.target }}/release
-          ####### reduce binary size by removing debug symbols #######
-          echo "Stripping binary"
-          BINARY_NAME=snakes${{ matrix.job.bin-postfix }}
-          if [[ ${{ matrix.job.target }} == aarch64-unknown-linux-gnu ]]; then
-            GCC_PREFIX="aarch64-linux-gnu-"
+          BIN=snakes${{ matrix.bin-ext }}
+          REL=snakes-${GITHUB_REF/refs\/tags\//}-${{ matrix.os-name }}-${{ matrix.arch }}
+          tar czvf $REL.tar.gz $BIN
+          if [[ "${{ runner.os }}" == "Windows" ]]; then
+            certutil -hashfile $REL.tar.gz sha256 | grep -E [A-Fa-f0-9]{64} > $REL.sha256
           else
-            GCC_PREFIX=""
-          fi
-          "$GCC_PREFIX"strip $BINARY_PATH/$BINARY_NAME
-          ########## create tar.gz ##########
-          echo "Archiving binary"
-          RELEASE_NAME=snakes-${GITHUB_REF/refs\/tags\//}-${{ matrix.job.os-name }}-${{ matrix.job.arch }}
-          tar czvf $RELEASE_NAME.tar.gz -C $BINARY_PATH $BINARY_NAME
-          ########## create sha256 ##########
-          echo "Creating hash"
-          if [[ ${{ runner.os }} == 'Windows' ]]; then
-            certutil -hashfile $RELEASE_NAME.tar.gz sha256 | grep -E [A-Fa-f0-9]{64} > $RELEASE_NAME.sha256
-          else
-            shasum -a 256 $RELEASE_NAME.tar.gz > $RELEASE_NAME.sha256
+            shasum -a 256 $REL.tar.gz > $REL.sha256
           fi
 
-      - name: Creating release
+      - name: Release
         uses: softprops/action-gh-release@v1
         with:
           files: |
-            snakes-*-${{ matrix.job.os-name }}-*.tar.gz
-            snakes-*-${{ matrix.job.os-name }}-*.sha256
+            snakes-*-${{ matrix.os-name }}-*.tar.gz
+            snakes-*-${{ matrix.os-name }}-*.sha256
         env:
           GITHUB_TOKEN: ${{ secrets.PAT }}
