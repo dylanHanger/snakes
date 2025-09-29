@@ -1,26 +1,42 @@
-# Snakes 🐍
+# Snakes!
 
-A Go implementation of the Snakes game framework, an evolution of the [original Rust version](https://github.com/dylanHanger/snakes).
+[![](https://dcbadge.limes.pink/api/server/zapH4Sz7wH)](https://discord.gg/zapH4Sz7wH)
 
-## Overview
+"Snake" is a classic arcade game where the player controls a snake which gets longer every time it eats. If the snake collides with anything, including itself (which is more likely to happen as it gets longer!), it will die and its length will be reset.
+"Snakes!" is an AI competition, a coding challenge in which participants must write a program that will play a multiplayer version of Snake against other snake AIs. The snake that holds the record for the longest length throughout the course of the game is the winner!
 
-Snakes is a competitive programming environment where multiple snake agents compete on a grid.
-The goal is to become the longest snake by eating apples while avoiding collisions with walls, other snakes, or your own body.
-
-### Game Mechanics
-
-- **Objective**: Become the longest snake by eating apples and avoiding crashes
-- **Movement**: Snakes move one space per turn in one of four directions (north, east, south, west)
-- **Food**: Apples appear on the board that increase (or decrease!) your snake's length when eaten
-- **Death**: Snakes die by colliding with walls, other snakes, or themselves
-- **Scoring**: Snakes are ranked by maximum length achieved, kills, deaths, and current length
-
-## Usage
+## Getting Started
 
 You can download a release build and run it like any other application.
-You can run snakes by cloning this repo and then running `go run cmd/snakes`
+If you are so inclined, you can clone this repo and build it yourself.
 
-The game loads configuration from `config/config.yaml` by default, you can change this by providing the `-config FILE` command line argument
+```
+git clone https://github.com/dylanHanger/snakes
+cd snakes
+go run ./cmd/snakes --config config/config.yaml
+```
+
+The game loads configuration from `config.yaml` by default, you can change this by providing the `--config FILE` command line argument.
+
+## Gameplay
+
+The primary goal of the game is to become the longest snake. To do this, you must eat fresh food and avoid crashing. But remember, this is a multiplayer game, and the other snakes are trying to do the same thing.
+
+### Food
+
+There is always at least one food on the board at any time. If one is eaten, another will immediately spawn at a random position. Each turn, the food decays; becoming rotten and eventually disappearing.
+
+Initially food is worth some value (5 by default). As it decays, this will decrease linearly. At the halfway point, the food becomes rotten, and eating it will shrink your snake! After eating the food, your snake will grow by one each turn for $v_t$ turns, where $v_t$ is the value of the food at that point in time.
+
+$$ v_t = \lfloor v_0 \times (\frac{l_t}{l_0} \times 2 - 1) \rceil $$
+where $l_t$ is the food's remaining lifetime.
+
+### Kills and Deaths
+
+When a snake attempts to move into a space that is occupied, the snake will die, and the occupant will be credited with a kill (you will instead lose a kill if it was a suicide).
+If two snakes both attempt to move into the same space and collide head on, they are both credited with a kill.
+If a snake attempts to move out of the play grid, it dies and nobody is credited with a kill.
+If a snake's length shrinks below 1 (by eating rotten food), it will die.
 
 ## Configuration
 
@@ -30,44 +46,47 @@ Configure your game through the `config.yaml` file:
 width: 32 # Board width
 height: 32 # Board height
 turns: 1500 # Maximum game turns
-turnsPerSecond: 0 # 0 = run as fast as possible, >0 locks to that TPS
+turnsPerSecond: 0 # 0 = run as fast as possible
 
 respawn: 2 # Turns you miss while dead (0 = spawn next turn)
 
 food:
-  value: 5 # Base value of food
+  value: 5 # Initial value of food
   lifetime: 50 # How long food remains (0 = forever)
-  count: 1 # Number of food items on the board
+  count: 1 # Number of food items on the board at any point in time
 
 players:
-  - Ferris:
+  - My Snake:
       type: custom
-      cmd: examples/ferris.exe
+      cmd: mysnake.exe
       args:
         - --difficulty
         - hard
       timeout: 250 # Per-player move budget in milliseconds
-      wait: false # If true, engine waits indefinitely for a move
-  - EasyBot:
+      wait: false # If true, the game won't progress until a move is submitted by this agent
+
+  - Easy Bot:
       type: builtin
       difficulty: easy
-      color: bluetiful
-      timeout: 0 # 0 = use global turn duration
+      color: red # You can set custom colors for your snake
+
+   - Medium Bot:
+      type: builtin
+      difficulty: medium
+      color: pacific blue # You can use Crayola color names
+
+   - Hard Bot:
+      type: builtin
+      difficulty: hard
+      color: fcd667 # Or you can use hex strings (with or without a '#')
 ```
-
-Key notes:
-
-- `turnsPerSecond` controls how quickly the game clock advances. Setting it to `0` tells the engine to process turns as soon as inputs arrive.
-- Each player can override their own `timeout` (milliseconds) and `wait` behaviour. When `timeout` is `0`, the engine uses the global turn duration; with `wait: true`, the engine blocks until the agent replies.
-- Custom agents use `cmd` plus optional `args` instead of the older `executable` / `arguments` keys.
-- Optional fields such as `color` (hex or Crayola name) and `silent` still work as before.
 
 ## Agent Types
 
 - **Custom**: External program that communicates via standard I/O
 - **Builtin**: Pre-programmed AI with difficulty levels (easy/medium/hard)
 - **Random**: Makes random moves
-- **Keyboard**: Human-controlled
+- **Keyboard**: Human-controlled via keyboard input
 
 ## Creating a Custom Agent
 
@@ -78,64 +97,70 @@ Custom agents communicate with the game via standard I/O:
 3. Game sends updated state
 4. Repeat until game over
 
-See the `examples/` directory for sample implementations.
+See the `examples/` directory for sample implementations in various languages.
 
-### External Agent Protocol
+### Communication Protocol
 
 When a custom agent starts, Snakes! writes four initial lines:
 
 1. `<width> <height>`
 2. `<food_lifetime> <food_value>`
 3. `<player_count> <your_id>`
-4. `<max_turns> <timeout_ms>` (`-1` if `wait: true`)
+4. `<max_turns> <timeout_ms>`
 
-Each turn that the agent is alive, the engine sends:
+If `wait: true` is set for your agent, then `<timeout_ms>` will be `-1`.
+
+Each turn that your snake is alive, the engine sends:
 
 - A line containing the food count: `<apple_count>`
 - One line per food item: `<lifetime_remaining> <x> <y>`
-- One line per snake: `<id> <kills> <deaths> <segment_count> <x1> <y1> … <xN> <yN>`
+- One line per snake: `<id> <kills> <deaths> <current_length> <x1> <y1> … <xN> <yN>`
 
-Clients should reply with a single line that starts with `n`, `e`, `s`, or `w` (case-insensitive).
+Dead snakes will have a length of 0 (and therefore no coordinates).
+
+#### Moving
+
+To submit a move, you must print a single line that starts with `n`, `e`, `s`, or `w` (case-insensitive).
+
+Snakes cannot turn in the direction opposite to their current direction.
+For example, if you are moving `North`, an output of `South` will be ignored, and you will continue moving `North`.
+If you do not output a move within your allotted time, your snake will simply move forwards.
+
+#### Logging
+
+While the agent must output their move on `stdout`, `stderr` can be used to "talk".
+Anything output on `stderr` gets displayed as a chat message.
 
 ### Coordinate System
 
 All board coordinates use `(0,0)` in the top-left corner. `x` increases to the right, `y` increases as you move down the board.
 
-## Differences from Rust Version (v1)
+## FAQ
 
-### New Features
+### How can I debug my snake?
 
-1. **Flexible Food Configuration**:
+It can be quite tricky to debug a program that you aren't launching directly, but you can probably attach the debugger after it has been launched by the engine (you'll have to figure this out yourself for your chosen language, sorry!).\
+I recommend setting
 
-   - `food.count`: Configure multiple food items on the board
-   - `food.lifetime`: Set to 0 to disable food decay
+```yaml
+wait: true
+```
 
-2. **Per-Player Settings**:
+for your snake in `config.yaml`. This will ensure that the game waits for you when you hit a breakpoint.
+Make liberal use of logging to `stderr` to see your snake's thought process too!
 
-   - Individual `timeout` for each player
+### Can I cheat?
 
-3. **Game Speed Control**:
+No, you cannot. The only rules are those built into the game itself. If you are able to accomplish something within those rules, I consider it to be a valid strategy. However, I do reserve the right to patch any unintended exploits.
 
-   - `turnsPerSecond` directly controls game speed
-   - No separate "Quick" mode - automatic based on timeouts and turn duration
+### What language should I code my snake in?
 
-4. **Agent Communication**:
+Anything you want, as long as you can make it read and write over standard I/O.
 
-   - Direction input must be text starting with 'n'/'e'/'s'/'w'
-   - No support for 0/1/2/3 numeric direction input
+### Where do I start with something like this?
 
-5. **Improved Interface**:
-
-   - Support for custom snake colors (hex, crayola names)
-   - Support for custom skins (coming soon!)
-
-### Identical Mechanics
-
-- Core gameplay (movement, collisions, growth)
-- Scoring system and priorities
-- Agent implementation interface
-- Food decay mechanic (when enabled)
-  - Although you should be aware of multiple food items, as well as no-decay food
+Have a look at the examples to get an idea on how you can approach it.
+You can also join us on [Discord](https://discord.gg/zapH4Sz7wH) to ask for help or just hang out!
 
 ## License
 
