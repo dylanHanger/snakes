@@ -6,7 +6,8 @@ import (
 	"image"
 	"image/color"
 	"math"
-	"time"
+	"slices"
+	"strings"
 
 	_ "image/png"
 
@@ -270,9 +271,37 @@ func (g *Game) Render(screen *ebiten.Image) {
 		g.drawSnakeWithSkin(screen, g.getSkin(id), *s)
 	}
 
-	runtime := time.Since(g.state.startTime)
-	actualTPS := float64(g.state.currentTurn) * float64(time.Second) / float64(runtime)
-	ebitenutil.DebugPrint(screen, fmt.Sprintf("Turn: %4d/%4d\nTPS: %0.02f", g.state.currentTurn, g.config.MaxTurns, actualTPS))
+	snakes := make([]*Snake, len(g.players))
+	for id := range len(snakes) {
+		snakes[id] = g.state.snakes[id]
+	}
+	// sort.Sort(ByScore(snakes))
+	slices.SortFunc(snakes, func(a, b *Snake) int {
+		// Compare by MaxLength
+		if a.MaxLength != b.MaxLength {
+			return b.MaxLength - a.MaxLength
+		}
+		// Then by CurrentLength
+		if a.CurrentLength != b.CurrentLength {
+			return b.CurrentLength - a.CurrentLength
+		}
+		// Then by Kills
+		if a.Kills != b.Kills {
+			return b.Kills - a.Kills
+		}
+		// Finally by Deaths (fewer is better)
+		if a.Deaths != b.Deaths {
+			return (a.Deaths + a.Suicides) - (b.Deaths + b.Suicides)
+		}
+		// Equal
+		return 0
+	})
+
+	displayStrings := make([]string, len(g.players))
+	for i, s := range snakes {
+		displayStrings[i] = fmt.Sprintf("%d. %s: %d (max: %d) K: %d D: %d", i, s.player.Name(), s.CurrentLength, s.MaxLength, s.Kills, s.Deaths+s.Suicides)
+	}
+	ebitenutil.DebugPrint(screen, strings.Join(displayStrings, "\n"))
 }
 
 type renderState struct {
