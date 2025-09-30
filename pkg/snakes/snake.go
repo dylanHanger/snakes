@@ -28,6 +28,7 @@ func (s *Snake) Score() snakeScore {
 func (s *Snake) Kill(suicide bool) {
 	s.lastDirection = DirNone
 	s.body = []GridPoint{}
+	s.CurrentLength = 0
 
 	s.Deaths += 1
 	if suicide {
