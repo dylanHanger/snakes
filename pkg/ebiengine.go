@@ -193,7 +193,10 @@ func (e *ebiEngine[S, A]) processTurn() error {
 				effectiveCtx := agentCtx
 				if !p.WaitFor() {
 					var cancel context.CancelFunc
-					realTimeout := max(e.turnDuration, p.Timeout())
+					realTimeout := e.turnDuration
+					if p.Timeout() > 0 {
+						realTimeout = p.Timeout()
+					}
 					effectiveCtx, cancel = context.WithTimeout(agentCtx, realTimeout)
 					defer cancel()
 				}
