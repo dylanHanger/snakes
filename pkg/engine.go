@@ -21,8 +21,7 @@ type Game[S, A any] interface {
 
 	Players() map[int]Player[S, A]
 
-	ShouldSendState(id int) bool
-	State(id int) S
+	State(id int) (S, error)
 
 	Reset() error
 	ProcessTurn(actions map[int]A) error

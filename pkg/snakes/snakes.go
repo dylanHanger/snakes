@@ -110,26 +110,28 @@ func (g *Game) Reset() error {
 	return nil
 }
 
-// ShouldSendState implements pkg.Game.
 func (g *Game) ShouldSendState(id int) bool {
 	snake, exists := g.state.snakes[id]
 	return exists && snake != nil && !snake.IsDead()
 }
 
 // State implements pkg.Game.
-func (g *Game) State(id int) State {
+func (g *Game) State(id int) (State, error) {
 	food := make(map[GridPoint]int)
 	copier.Copy(&food, g.state.food)
 
 	snakes := make(map[int]Snake)
 	copier.Copy(&snakes, g.state.snakes)
 
-	return State{
-		Id:     id,
-		Config: g.config,
-		Snakes: snakes,
-		Food:   food,
+	if g.ShouldSendState(id) {
+		return State{
+			Id:     id,
+			Config: g.config,
+			Snakes: snakes,
+			Food:   food,
+		}, nil
 	}
+	return State{}, fmt.Errorf("player should not receive state this turn")
 }
 
 // ProcessTurn implements pkg.Game.

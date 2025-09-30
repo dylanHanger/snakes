@@ -181,7 +181,8 @@ func (e *ebiEngine[S, A]) processTurn() error {
 	// Communicate with each agent
 	var wg sync.WaitGroup
 	for id, p := range e.game.Players() {
-		if e.game.ShouldSendState(id) {
+		s, err := e.game.State(id)
+		if err == nil {
 			wg.Add(1)
 			go func(id int, p Player[S, A]) {
 				defer wg.Done()
@@ -204,9 +205,7 @@ func (e *ebiEngine[S, A]) processTurn() error {
 				startTime := time.Now()
 
 				// Send the state out
-				e.mu.Lock() // NOTE: Why lock here?
-				reply, err := a.Send(e.game.State(id), ctx)
-				e.mu.Unlock()
+				reply, err := a.Send(s, ctx)
 
 				if err != nil {
 					replies <- agentReply[A]{id: id, err: err}
