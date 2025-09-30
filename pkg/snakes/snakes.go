@@ -139,10 +139,6 @@ func (g *Game) ProcessTurn(actions map[int]Direction) error {
 	g.state.currentTurn++
 	for id, move := range actions {
 		snake := g.state.snakes[id]
-		if snake.IsDead() {
-			// just in case we asked for a move from a dead snake
-			continue
-		}
 		snake.Move(move)
 	}
 

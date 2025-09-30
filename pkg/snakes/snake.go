@@ -38,6 +38,9 @@ func (s *Snake) IsDead() bool {
 }
 
 func (s *Snake) Move(d Direction) {
+	if s.IsDead() {
+		return
+	}
 	head := s.Head()
 
 	current := s.Direction()
