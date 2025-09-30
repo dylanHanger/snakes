@@ -1,0 +1,36 @@
+# Default Snakes! Configuration
+---
+width: 32
+height: 32
+
+# Game settings
+turns: 1500
+turnsPerSecond: 10
+
+respawn: 10
+
+seed: snake byte
+
+# Food configuration
+food:
+  value: 5
+  lifetime: 50
+  count: 1
+
+# Player configurations
+players:
+  - My C Snake:
+      type: custom
+      wait: true
+      cmd: build/windows/x64/debug/my-c-snake.exe
+      args: ["--attach-debugger"]
+
+  - Easy Bot:
+      type: builtin
+      difficulty: easy
+  - Medium Bot:
+      type: builtin
+      difficulty: medium
+  - Hard Bot:
+      type: builtin
+      difficulty: hard
