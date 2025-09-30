@@ -1,0 +1,10 @@
+{
+  "profiles": {
+    "Snakes!": {
+      "commandName": "Executable",
+      "executablePath": "snakes",
+      "commandLineArgs": "--config config.yaml",
+      "workingDirectory": "$(ProjectDir)"
+    }
+  }
+}
