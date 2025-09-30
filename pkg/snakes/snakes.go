@@ -230,7 +230,7 @@ func (g *Game) getFoodValue(lifetime int) int {
 }
 
 func (g *Game) processCollisions() {
-	deaths := make(map[int]bool)
+	deaths := make(map[int]int)
 	for id, s := range g.state.snakes {
 		if s.IsDead() {
 			continue
@@ -239,7 +239,7 @@ func (g *Game) processCollisions() {
 
 		// collisions with walls
 		if head.X < 0 || head.X >= g.config.Width || head.Y < 0 || head.Y >= g.config.Height {
-			deaths[id] = false
+			deaths[id] = -1
 			continue
 		}
 
@@ -255,7 +255,7 @@ func (g *Game) processCollisions() {
 					continue
 				}
 				if head == p {
-					deaths[id] = id == oId
+					deaths[id] = oId
 					continue
 				}
 			}
@@ -268,7 +268,7 @@ func (g *Game) processCollisions() {
 				delete(g.state.food, p)
 
 				if s.length == 0 {
-					deaths[id] = false
+					deaths[id] = -1
 				}
 			}
 		}
@@ -277,9 +277,14 @@ func (g *Game) processCollisions() {
 	// kill all snakes that collided
 	// this is done in a separate loop so that a snake that dies this turn still
 	// acts as an obstacle to other snakes
-	for id, suicide := range deaths {
+	for id, kId := range deaths {
 		s := g.state.snakes[id]
+		suicide := id == kId
 		s.Kill(suicide)
+		if kId != -1 && !suicide {
+			k := g.state.snakes[kId]
+			k.Kills += 1
+		}
 	}
 }
 
