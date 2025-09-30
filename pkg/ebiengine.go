@@ -184,29 +184,30 @@ func (e *ebiEngine[S, A]) processTurn() error {
 		if e.game.ShouldSendState(id) {
 			wg.Add(1)
 			go func(id int, p Player[S, A]) {
-				a := p.Agent()
-
-				agentCtx, agentCancel := context.WithCancel(turnCtx)
-				defer agentCancel()
 				defer wg.Done()
 
-				effectiveCtx := agentCtx
-				if !p.WaitFor() {
-					var cancel context.CancelFunc
-					realTimeout := e.turnDuration
+				a := p.Agent()
+
+				var ctx context.Context
+				var cancel context.CancelFunc
+				if p.WaitFor() {
+					ctx, cancel = context.WithCancel(turnCtx)
+				} else {
+					timeout := e.turnDuration
 					if p.Timeout() > 0 {
-						realTimeout = p.Timeout()
+						timeout = p.Timeout()
 					}
-					effectiveCtx, cancel = context.WithTimeout(agentCtx, realTimeout)
-					defer cancel()
+					ctx, cancel = context.WithTimeout(turnCtx, timeout)
 				}
+				defer cancel()
+
+				startTime := time.Now()
 
 				// Send the state out
 				e.mu.Lock() // NOTE: Why lock here?
-				reply, err := a.Send(e.game.State(id), effectiveCtx)
+				reply, err := a.Send(e.game.State(id), ctx)
 				e.mu.Unlock()
 
-				startTime := time.Now()
 				if err != nil {
 					replies <- agentReply[A]{id: id, err: err}
 					return
@@ -217,13 +218,14 @@ func (e *ebiEngine[S, A]) processTurn() error {
 				select {
 				case r := <-reply:
 					replies <- agentReply[A]{id: id, action: r, time: time.Since(startTime)}
-				case <-effectiveCtx.Done():
+				case <-ctx.Done():
+					t := time.Since(startTime)
 					select {
 					// Check again in case of a tiebreak situation
 					case r := <-reply:
-						replies <- agentReply[A]{id: id, action: r, time: time.Since(startTime)}
+						replies <- agentReply[A]{id: id, action: r, time: t}
 					default:
-						replies <- agentReply[A]{id: id, err: effectiveCtx.Err(), time: time.Since(startTime)}
+						replies <- agentReply[A]{id: id, err: ctx.Err(), time: t}
 					}
 				}
 			}(id, p)
@@ -263,12 +265,12 @@ func (e *ebiEngine[S, A]) processTurn() error {
 // waits until a timeout or the context is canceled
 func (e *ebiEngine[S, A]) waitForTurn(ctx context.Context) {
 	timeout, cancel := context.WithTimeout(ctx, e.turnDuration)
+	defer cancel()
 
 	select {
 	case <-ctx.Done():
 	case <-timeout.Done():
 	}
-	cancel()
 }
 
 func (e *ebiEngine[S, A]) markTurnReady() {
