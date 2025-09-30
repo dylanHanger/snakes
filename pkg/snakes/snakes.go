@@ -98,7 +98,9 @@ func (g *Game) Reset() error {
 	g.state.food = make(map[GridPoint]int)
 
 	for id, player := range g.players {
-		g.state.snakes[id] = new(Snake)
+		snake := new(Snake)
+		snake.player = player
+		g.state.snakes[id] = snake
 		if setter, ok := player.Agent().(interface{ SetRandom(*pkg.SharedRand) }); ok {
 			setter.SetRandom(pkg.GetRandomFromSeed(fmt.Sprintf("%s:%d", g.config.Seed, id)))
 		}

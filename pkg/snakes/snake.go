@@ -8,6 +8,8 @@ type Snake struct {
 
 	respawnCounter int
 	lastDirection  Direction
+
+	player player
 }
 
 type snakeScore struct {
