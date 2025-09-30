@@ -137,6 +137,14 @@ All board coordinates use `(0,0)` in the top-left corner. `x` increases to the r
 
 ## FAQ
 
+### What does a good snake look like?
+
+That’s entirely up to you! There are countless strategies and ways to succeed. You might aim for maximum growth, stay small and focus on blocking others, or find some quirky niche that makes your snake unique.
+
+A “good snake” doesn’t even have to win reliably. It could be one that does something fun, uses an interesting algorithm, be written in a language you’ve never tried before, or compiles down to the tiniest possible executable.
+
+This game is more about the journey than the destination. If your idea of fun isn’t crushing every opponent, that’s perfectly fine too!
+
 ### How can I debug my snake?
 
 It can be quite tricky to debug a program that you aren't launching directly, but you can probably attach the debugger after it has been launched by the engine (you'll have to figure this out yourself for your chosen language, sorry!).\
