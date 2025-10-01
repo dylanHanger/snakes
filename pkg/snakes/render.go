@@ -226,12 +226,12 @@ func (g *Game) drawSnakeWithSkin(screen *ebiten.Image, atlas *ebiten.Image, snak
 			rotations = int(snake.Direction())
 		} else if i == len(body)-1 {
 			img = tail
-			d := body[i].DirectionTo(body[i-1])
+			d := body[i].Towards(body[i-1])
 			rotations = int(d) - 1
 		} else {
 			a, b, c := body[i-1], body[i], body[i+1]
-			prevDir := c.DirectionTo(b)
-			nextDir := b.DirectionTo(a)
+			prevDir := c.Towards(b)
+			nextDir := b.Towards(a)
 			t, r := getBodySegmentConfig(prevDir, nextDir)
 			rotations = r
 			img = segm[t]

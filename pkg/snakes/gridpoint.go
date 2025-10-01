@@ -1,5 +1,7 @@
 package snakes
 
+import "math"
+
 type GridPoint struct {
 	X, Y int
 }
@@ -12,10 +14,14 @@ func (p *GridPoint) Move(d Direction) GridPoint {
 	return GridPoint{p.X + dx, p.Y + dy}
 }
 
-// DirectionTo returns the direction that moves towards another point
+func (p *GridPoint) Reflect(w, h int) GridPoint {
+	return GridPoint{w - p.X, h - p.Y}
+}
+
+// Towards returns the direction that moves towards another point
 //
-// When the other point is offset on both axes, DirectionTo returns the direction of the greatest offset
-func (p *GridPoint) DirectionTo(other GridPoint) Direction {
+// When the other point is offset on both axes, Towards returns the direction of the greatest offset
+func (p *GridPoint) Towards(other GridPoint) Direction {
 	dx, dy := p.X-other.X, p.Y-other.Y
 
 	// Equal points
@@ -54,7 +60,41 @@ func (p *GridPoint) DirectionTo(other GridPoint) Direction {
 	return DirSouth
 }
 
-// DistanceTo returns the Manhattan or L1 distance between two points
-func (p *GridPoint) DistanceTo(other GridPoint) int {
+// AxesTowards returns the pair of directions that point towards another point
+func (p *GridPoint) AxesTowards(other GridPoint) (Direction, Direction) {
+	dx, dy := p.X-other.X, p.Y-other.Y
+	var dh, dv Direction
+
+	switch {
+	case dx == 0:
+		dh = DirNone
+	case dx < 0:
+		dh = DirEast
+	case dx > 0:
+		dh = DirWest
+	}
+
+	switch {
+	case dy == 0:
+		dv = DirNone
+	case dy < 0:
+		dv = DirSouth
+	case dy > 0:
+		dv = DirNorth
+	}
+
+	return dh, dv
+}
+
+// L1DistanceTo returns the Manhattan or L1 distance between two points
+func (p *GridPoint) L1DistanceTo(other GridPoint) int {
 	return abs(p.X-other.X) + abs(p.Y-other.Y)
+}
+
+// L2DistanceTo returns the Euclidean or L2 distance between two points
+func (p *GridPoint) L2DistanceTo(other GridPoint) float64 {
+	dx := p.X - other.X
+	dy := p.Y - other.Y
+
+	return math.Round(math.Sqrt(float64(dx*dx + dy*dy)))
 }

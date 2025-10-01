@@ -3,8 +3,6 @@ package snakes
 import (
 	"context"
 	"math"
-	"slices"
-	"sort"
 )
 
 type BuiltInDifficulty string
@@ -38,14 +36,47 @@ func (a *builtInAgent) Send(state State, ctx context.Context) (<-chan Direction,
 	return replyChan, nil
 }
 
-func (a *builtInAgent) computeMove(state State) Direction {
-	me := state.Snakes[state.Id]
-	if me.IsDead() {
-		// Safe fallback if we're dead or our snake doesn't exist in the state
-		// FIXME: Find whatever is causing dead agents to be asked for moves
-		return DirNone
+func (s *State) findClosestFood(p GridPoint) (GridPoint, int) {
+	var point GridPoint
+	var lifetime int
+	dist := math.MaxInt
+	for f, v := range s.Food {
+		d := f.L1DistanceTo(p)
+		if d < dist {
+			dist = d
+			point = f
+			lifetime = v
+		}
 	}
 
+	return point, lifetime
+}
+
+func (s *State) containsPoint(p GridPoint) bool {
+	return p.X >= 0 && p.X < s.Width || p.Y > 0 || p.Y < s.Height
+}
+
+func (s *State) obstacles() map[GridPoint]bool {
+	obstacles := make(map[GridPoint]bool)
+	for _, s := range s.Snakes {
+		for _, p := range s.Body() {
+			obstacles[p] = true
+		}
+	}
+	w, h := s.Width, s.Height
+	for x := range w {
+		obstacles[GridPoint{X: x, Y: -1}] = true
+		obstacles[GridPoint{X: x, Y: h}] = true
+	}
+	for y := range h {
+		obstacles[GridPoint{X: -1, Y: y}] = true
+		obstacles[GridPoint{X: w, Y: y}] = true
+	}
+
+	return obstacles
+}
+
+func (a *builtInAgent) computeMove(state State) Direction {
 	switch a.difficulty {
 	case Easy:
 		return a.computeMoveEasy(state)
@@ -63,287 +94,131 @@ func (a *builtInAgent) computeMoveEasy(state State) Direction {
 	if me.IsDead() {
 		return DirNone
 	}
-	myHead := me.Head()
+	head := me.Head()
+	direction := me.Direction()
+	center := GridPoint{X: state.Width / 2, Y: state.Height / 2}
 
-	var closest GridPoint
-	closestDist := math.MaxInt
-	for p := range state.Food {
-		dist := p.DistanceTo(myHead)
-		if dist < closestDist {
-			closestDist = dist
-			closest = p
+	closest, _ := state.findClosestFood(head)
+
+	dx, dy := head.AxesTowards(closest)
+	if dx == DirNone {
+		if dy == DirNone {
+			return DirNone
+		} else if dy == direction.Opposite() {
+			_, dy := head.AxesTowards(center)
+			return dy
+		}
+		return dy
+	} else if dx == direction.Opposite() {
+		if dy == DirNone {
+			dx, _ := head.AxesTowards(center)
+			return dx
 		}
 	}
-
-	currentDir := me.Direction()
-	targetDir := myHead.DirectionTo(closest)
-	if currentDir == targetDir.Opposite() {
-		targetDir = targetDir.Next()
-	}
-	return targetDir
+	return dx
 }
 
 func (a *builtInAgent) computeMoveMedium(state State) Direction {
 	me := state.Snakes[state.Id]
-	myHead := me.Head()
-	currentDir := me.Direction()
-	w, h := state.Width, state.Height
+	if me.IsDead() {
+		return DirNone
+	}
+	head := me.Head()
+	direction := me.Direction()
+	center := GridPoint{state.Width / 2, state.Height / 2}
 
-	// 1. Create obstacles map including walls
-	obstacles := make(map[GridPoint]bool)
-	for _, s := range state.Snakes {
-		for _, p := range s.Body() {
-			obstacles[p] = true
+	closest, _ := state.findClosestFood(head)
+
+	dx, dy := head.AxesTowards(closest)
+	var best Direction
+	if dx == DirNone {
+		if dy == DirNone {
+			best = DirNone
+		} else if dy == direction.Opposite() {
+			_, best = head.AxesTowards(center)
+		} else {
+			best = dy
 		}
-	}
-	for x := range w {
-		obstacles[GridPoint{X: x, Y: -1}] = true
-		obstacles[GridPoint{X: x, Y: h}] = true
-	}
-	for y := range h {
-		obstacles[GridPoint{X: -1, Y: y}] = true
-		obstacles[GridPoint{X: w, Y: y}] = true
-	}
-
-	// 2. Evaluate food - consider both value and reachability
-	rotPoint := state.FoodLifetime / 2
-
-	var bestFood GridPoint
-	bestScore := -math.MaxInt
-	for p, v := range state.Food {
-		dist := p.DistanceTo(myHead)
-		// Skip if it will be rotten by the time we get there
-		vt := v - dist
-		if vt < rotPoint {
-			continue
+	} else if dx == direction.Opposite() {
+		if dy == DirNone {
+			best, _ = head.AxesTowards(center)
+		} else {
+			best = dx
 		}
-
-		if vt > bestScore {
-			bestScore = vt
-			bestFood = p
-		}
+	} else {
+		best = dx
 	}
 
-	// 3. If no good food found, follow tail for safety
-	if bestScore == -math.MaxInt {
-		tail := me.Body()[len(me.Body())-1]
-		bestFood = tail
-	}
+	next := head.Move(best)
+	obstacles := state.obstacles()
 
-	// 4. What direction do I want to move?
-	targetDir := myHead.DirectionTo(bestFood)
-
-	// 5. Safety check with proper rotation tracking
-	safeDir := targetDir
-	checkedDirs := 0
-	maxDirs := 4 // Total possible directions
-
-	// Try directions in order of preference: target, next, previous, opposite
-	preferences := []Direction{
-		targetDir,
-		targetDir.Next(),
-		targetDir.Previous(),
-		targetDir.Opposite(),
-	}
-
-	for _, dir := range preferences {
-		nextHead := myHead.Move(dir)
-
-		// Check if move is safe (not hitting wall or snake)
-		safe := nextHead.X >= 0 && nextHead.Y >= 0 && nextHead.X < w && nextHead.Y < h && !obstacles[nextHead]
-
-		// Also prevent reversing
-		if dir == currentDir.Opposite() {
-			safe = false
-		}
-
-		if safe {
-			safeDir = dir
+	for range 3 {
+		if state.containsPoint(next) && !obstacles[next] {
 			break
 		}
-
-		checkedDirs++
-		if checkedDirs >= maxDirs {
-			// If no safe option, use the target direction (we're going to die anyway)
-			safeDir = targetDir
-			break
-		}
+		best = best.Next()
+		next = head.Move(best)
 	}
 
-	return safeDir
+	return best
 }
 
 func (a *builtInAgent) computeMoveHard(state State) Direction {
 	me := state.Snakes[state.Id]
-	myHead := me.Head()
-	myTail := me.Tail()
-	w, h := state.Width, state.Height
-
-	// 1. Create obstacles map including walls
-	obstacles := make(map[GridPoint]bool)
-	for _, s := range state.Snakes {
-		for _, p := range s.Body() {
-			obstacles[p] = true
-		}
+	if me.IsDead() {
+		return DirNone
 	}
-	for x := range w {
-		obstacles[GridPoint{X: x, Y: -1}] = true
-		obstacles[GridPoint{X: x, Y: h}] = true
-	}
-	for y := range h {
-		obstacles[GridPoint{X: -1, Y: y}] = true
-		obstacles[GridPoint{X: w, Y: y}] = true
-	}
+	head := me.Head()
 
-	dangerZones := make(map[GridPoint]bool)
-	for sId, s := range state.Snakes {
-		if sId == state.Id || s.IsDead() {
-			continue
-		}
-		p := s.Head()
-		for _, d := range DirCardinals {
-			n := p.Move(d)
-			if !obstacles[n] {
-				dangerZones[n] = true
-			}
-		}
-	}
-
-	// 2. Evaluate food - consider both value and reachability
-	rotPoint := state.FoodLifetime / 2
-
-	bestPath := findPath(myHead, myTail, obstacles, w, h)
-	bestScore := 0
-	for p, v := range state.Food {
-		path := findPath(myHead, p, obstacles, w, h)
-		if path == nil {
-			continue // unreachable, no loss
-		}
-
-		// Skip if it will be rotten by the time we get there
-		dist := len(path)
-		vt := v - dist
-		if vt < rotPoint {
-			continue
-		}
-
-		if vt > bestScore {
-			// its worth going for, but can I guarantee I get it?
-			guaranteed := true
-			for sId, s := range state.Snakes {
-				if state.Id == sId || s.IsDead() {
-					continue
-				}
-				otherHead := s.Head()
-				otherPath := findPath(otherHead, p, obstacles, w, h)
-				if otherPath != nil && len(otherPath) <= len(path) {
-					guaranteed = false
-					break
-				}
-			}
-
-			if !guaranteed {
-				continue
-			}
-
-			bestScore = vt
+	var bestPath []GridPoint
+	bestLifetime := math.MinInt
+	for p, l := range state.Food {
+		path := findPath(head, p, state)
+		lifetime := l - len(path)
+		if lifetime > bestLifetime {
 			bestPath = path
+			bestLifetime = lifetime
 		}
 	}
 
-	var targetDir Direction
 	if len(bestPath) > 0 {
-		targetDir = myHead.DirectionTo(bestPath[0])
+		return head.Towards(bestPath[len(bestPath)-1])
+	} else {
+		return a.computeMoveMedium(state)
 	}
-
-	safeDirections := []Direction{}
-	unsafeDirections := []Direction{}
-	currentDir := me.Direction()
-
-	// Calculate board center
-	centerX := w / 2
-	centerY := h / 2
-	centerPoint := GridPoint{X: centerX, Y: centerY}
-
-	// Map to store distances to center for each direction
-	centerDistances := make(map[Direction]int)
-
-	for _, d := range DirCardinals {
-		if d == currentDir.Opposite() {
-			continue // no reversing
-		}
-
-		nextPos := myHead.Move(d)
-		if nextPos.X >= 0 && nextPos.X < w && nextPos.Y >= 0 && nextPos.Y < h && !obstacles[nextPos] {
-			dangerous := dangerZones[nextPos]
-
-			// Calculate distance to center
-			distToCenter := nextPos.DistanceTo(centerPoint)
-			centerDistances[d] = distToCenter
-
-			if !dangerous {
-				safeDirections = append(safeDirections, d)
-			} else {
-				unsafeDirections = append(unsafeDirections, d)
-			}
-		}
-	}
-
-	if slices.Contains(safeDirections, targetDir) {
-		return targetDir
-	} else if len(safeDirections) > 0 {
-
-		// Sort safe directions by distance to center
-		sort.Slice(safeDirections, func(i, j int) bool {
-			return centerDistances[safeDirections[i]] < centerDistances[safeDirections[j]]
-		})
-
-		// Return the direction that gets us closest to center
-		return safeDirections[0]
-	} else if len(unsafeDirections) > 0 {
-		// Sort unsafe directions by distance to center too
-		sort.Slice(unsafeDirections, func(i, j int) bool {
-			return centerDistances[unsafeDirections[i]] < centerDistances[unsafeDirections[j]]
-		})
-
-		return unsafeDirections[0]
-	}
-
-	r := a.random
-	if r != nil {
-		return DirCardinals[r.IntN(len(DirCardinals))]
-	}
-	return DirCardinals[0]
 }
 
 // A* pathfinding
-func findPath(start, goal GridPoint, obstacles map[GridPoint]bool, width, height int) []GridPoint {
+func findPath(start, goal GridPoint, s State) []GridPoint {
+	h := goal.L2DistanceTo
+
 	frontier := make(map[GridPoint]bool)
 	frontier[start] = true
 
 	cameFrom := make(map[GridPoint]GridPoint)
 
-	g := make(map[GridPoint]int)
-	g[start] = 0
+	gScore := make(map[GridPoint]int)
+	gScore[start] = 0
 
-	f := make(map[GridPoint]int)
-	f[start] = 0
+	fScore := make(map[GridPoint]float64)
+	fScore[start] = h(start)
+
+	obstacles := s.obstacles()
 
 	for len(frontier) > 0 {
 		var current GridPoint
-		lowest := math.MaxInt
-
+		lowest := math.MaxFloat64
 		for p := range frontier {
-			if score, exists := f[p]; exists && score < lowest {
-				lowest = score
+			if score, exists := fScore[p]; exists && score < lowest {
 				current = p
+				lowest = score
 			}
 		}
 
 		if current == goal {
-			path := []GridPoint{}
+			path := make([]GridPoint, 0)
 			for current != start {
-				path = append([]GridPoint{current}, path...)
+				path = append(path, current)
 				current = cameFrom[current]
 			}
 			return path
@@ -353,20 +228,18 @@ func findPath(start, goal GridPoint, obstacles map[GridPoint]bool, width, height
 		for _, d := range DirCardinals {
 			n := current.Move(d)
 
-			if n.X < 0 || n.X >= width || n.Y < 0 || n.Y >= height || obstacles[n] {
+			if !s.containsPoint(n) || obstacles[n] {
 				continue
 			}
 
-			tentativeG := g[current] + 1
-			if gScore, inMap := g[n]; !inMap || gScore > tentativeG {
+			g := gScore[current] + 1
+			if oldG, exists := gScore[n]; !exists || g < oldG {
 				cameFrom[n] = current
-				g[n] = tentativeG
-				f[n] = tentativeG + n.DistanceTo(goal)
-
+				gScore[n] = g
+				fScore[n] = float64(g) + h(n)
 				frontier[n] = true
 			}
 		}
 	}
-
 	return nil
 }
