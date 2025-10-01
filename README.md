@@ -28,7 +28,10 @@ There is always at least one food on the board at any time. If one is eaten, ano
 
 Initially food is worth some value (5 by default). As it decays, this will decrease linearly. At the halfway point, the food becomes rotten, and eating it will shrink your snake! After eating the food, your snake will grow by one each turn for $v_t$ turns, where $v_t$ is the value of the food at that point in time.
 
-$$ v_t = \lfloor v_0 \times (\frac{l_t}{l_0} \times 2 - 1) \rceil $$
+```math
+v_t = \lfloor v_0 \times (\frac{l_t}{l_0} \times 2 - 1) \rceil
+```
+
 where $l_t$ is the food's remaining lifetime.
 
 ### Kills and Deaths
