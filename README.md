@@ -162,7 +162,7 @@ Make liberal use of logging to `stderr` to see your snake's thought process too!
 
 ### Can I cheat?
 
-No, you cannot. The only rules are those built into the game itself. If you are able to accomplish something within those rules, I consider it to be a valid strategy. However, I do reserve the right to patch any unintended exploits.
+Its not possible to cheat. If you are able to accomplish something within the game, I consider it to be a valid strategy. However, I do reserve the right to patch any unintended exploits.
 
 ### What language should I code my snake in?
 
