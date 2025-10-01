@@ -37,7 +37,7 @@ type (
 		startTime   time.Time
 		currentTurn int
 
-		snakes map[int]*Snake
+		snakes []*Snake
 		food   map[GridPoint]int
 	}
 )
@@ -94,7 +94,7 @@ func (g *Game) Reset() error {
 	g.random = pkg.GetRandomFromSeed(g.config.Seed)
 	g.state.startTime = time.Now()
 	g.state.currentTurn = 0
-	g.state.snakes = make(map[int]*Snake)
+	g.state.snakes = make([]*Snake, len(g.players))
 	g.state.food = make(map[GridPoint]int)
 
 	for id, player := range g.players {
@@ -113,8 +113,11 @@ func (g *Game) Reset() error {
 }
 
 func (g *Game) ShouldSendState(id int) bool {
-	snake, exists := g.state.snakes[id]
-	return exists && snake != nil && !snake.IsDead()
+	if id < 0 || id >= len(g.state.snakes) {
+		return false
+	}
+	snake := g.state.snakes[id]
+	return snake != nil && !snake.IsDead()
 }
 
 // State implements pkg.Game.
@@ -122,7 +125,7 @@ func (g *Game) State(id int) (State, error) {
 	food := make(map[GridPoint]int)
 	copier.Copy(&food, g.state.food)
 
-	snakes := make(map[int]Snake)
+	snakes := make([]Snake, len(g.state.snakes))
 	copier.Copy(&snakes, g.state.snakes)
 
 	if g.ShouldSendState(id) {
