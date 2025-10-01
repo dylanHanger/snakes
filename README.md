@@ -36,7 +36,7 @@ where $l_t$ is the food's remaining lifetime.
 
 ### Kills and Deaths
 
-When a snake attempts to move into a space that is occupied, the snake will die, and the occupant will be credited with a kill (you will instead lose a kill if it was a suicide).
+When a snake attempts to move into a space that is occupied, the snake will die, and the occupant will be credited with a kill (unless it was a suicide).
 If two snakes both attempt to move into the same space and collide head on, they are both credited with a kill.
 If a snake attempts to move out of the play grid, it dies and nobody is credited with a kill.
 If a snake's length shrinks below 1 (by eating rotten food), it will die.
