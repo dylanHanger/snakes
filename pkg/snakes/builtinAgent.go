@@ -52,6 +52,14 @@ func (s *State) findClosestFood(p GridPoint) (GridPoint, int) {
 	return point, lifetime
 }
 
+func (s *State) getFoodValue(l int) int {
+	if s.FoodLifetime > 0 {
+		p := (float64(l)/float64(s.FoodLifetime))*2.0 - 1.0
+		return int(math.Round(float64(s.FoodValue) * p))
+	}
+	return s.FoodValue
+}
+
 func (s *State) containsPoint(p GridPoint) bool {
 	return p.X >= 0 && p.X < s.Width || p.Y > 0 || p.Y < s.Height
 }
@@ -179,6 +187,10 @@ func (a *builtInAgent) computeMoveHard(state State) Direction {
 			bestPath = path
 			bestLifetime = lifetime
 		}
+	}
+
+	if state.getFoodValue(bestLifetime) < 1 {
+		bestPath = findPath(head, head.Reflect(state.Width, state.Height), state)
 	}
 
 	if len(bestPath) > 0 {
