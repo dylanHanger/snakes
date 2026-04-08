@@ -1,7 +1,5 @@
 # Snakes!
 
-[![](https://dcbadge.limes.pink/api/server/zapH4Sz7wH)](https://discord.gg/zapH4Sz7wH)
-
 "Snake" is a classic arcade game where the player controls a snake which gets longer every time it eats. If the snake collides with anything, including itself (which is more likely to happen as it gets longer!), it will die and its length will be reset.
 "Snakes!" is an AI competition, a coding challenge in which participants must write a program that will play a multiplayer version of Snake against other snake AIs. The snake that holds the record for the longest length throughout the course of the game is the winner!
 
