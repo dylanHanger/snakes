@@ -169,7 +169,6 @@ Anything you want, as long as you can make it read and write over standard I/O.
 ### Where do I start with something like this?
 
 Have a look at the examples to get an idea on how you can approach it.
-You can also join us on [Discord](https://discord.gg/zapH4Sz7wH) to ask for help or just hang out!
 
 ## License
 
