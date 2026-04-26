@@ -130,7 +130,7 @@ func (a *externalAgent) Send(state State, context context.Context) (<-chan Direc
 
 	// For each food item: <lifetime> <x> <y>
 	for point, lifetime := range food {
-		_, err := fmt.Fprintf(a.stdin, "%d %d %d\n", lifetime, point.X, height-point.Y-1)
+		_, err := fmt.Fprintf(a.stdin, "%d %d %d\n", lifetime, point.X, point.Y)
 		if err != nil {
 			return nil, fmt.Errorf("failed to write food info: %w", err)
 		}
@@ -149,7 +149,7 @@ func (a *externalAgent) Send(state State, context context.Context) (<-chan Direc
 
 		// Add snake body coordinates
 		for _, point := range body {
-			_, err := fmt.Fprintf(a.stdin, " %d %d", point.X, height-point.Y-1)
+			_, err := fmt.Fprintf(a.stdin, " %d %d", point.X, point.Y)
 			if err != nil {
 				return nil, fmt.Errorf("failed to write snake body: %w", err)
 			}
