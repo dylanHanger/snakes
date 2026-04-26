@@ -61,7 +61,7 @@ func (s *State) getFoodValue(l int) int {
 }
 
 func (s *State) containsPoint(p GridPoint) bool {
-	return p.X >= 0 && p.X < s.Width || p.Y > 0 || p.Y < s.Height
+	return p.X >= 0 && p.X < s.Width && p.Y >= 0 && p.Y < s.Height
 }
 
 func (s *State) obstacles() map[GridPoint]bool {
@@ -182,6 +182,11 @@ func (a *builtInAgent) computeMoveHard(state State) Direction {
 	bestLifetime := math.MinInt
 	for p, l := range state.Food {
 		path := findPath(head, p, state)
+
+		if path == nil {
+			continue
+		}
+
 		lifetime := l - len(path)
 		if lifetime > bestLifetime {
 			bestPath = path

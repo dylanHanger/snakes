@@ -131,10 +131,10 @@ func lerpColor(color1, color2 color.Color, t float32) color.Color {
 	r2, g2, b2, a2 = r2>>8, g2>>8, b2>>8, a2>>8
 
 	// Linear interpolation for each component
-	r := uint8(float32(r1)*t + float32(r2)*(1-t))
-	g := uint8(float32(g1)*t + float32(g2)*(1-t))
-	b := uint8(float32(b1)*t + float32(b2)*(1-t))
-	a := uint8(float32(a1)*t + float32(a2)*(1-t))
+	r := uint8(float32(r2)*t + float32(r1)*(1-t))
+	g := uint8(float32(g2)*t + float32(g1)*(1-t))
+	b := uint8(float32(b2)*t + float32(b1)*(1-t))
+	a := uint8(float32(a2)*t + float32(a1)*(1-t))
 
 	return color.RGBA{r, g, b, a}
 }
@@ -262,7 +262,7 @@ func (g *Game) Render(screen *ebiten.Image) {
 		}
 
 		scale := 0.6*f + 0.3*(1.-f)
-		actual := lerpColor(fresh, rotted, f)
+		actual := lerpColor(rotted, fresh, f)
 		g.drawGridCell(screen, p, scale, actual)
 	}
 

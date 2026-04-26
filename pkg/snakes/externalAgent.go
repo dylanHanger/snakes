@@ -16,6 +16,7 @@ type externalAgent struct {
 	stdin  io.WriteCloser
 	stdout io.ReadCloser
 	stderr io.ReadCloser
+	scanner *bufio.Scanner
 
 	executable string
 	args       []string
@@ -48,6 +49,7 @@ func (a *externalAgent) Start(ctx context.Context) error {
 	if err != nil {
 		return fmt.Errorf("failed to create stdout pipe: %w", err)
 	}
+	a.scanner = bufio.NewScanner(a.stdout)
 
 	a.stderr, err = a.cmd.StderrPipe()
 	if err != nil {
@@ -162,9 +164,9 @@ func (a *externalAgent) Send(state State, context context.Context) (<-chan Direc
 
 	go func() {
 		defer close(replyChan)
-		scanner := bufio.NewScanner(a.stdout)
-		if scanner.Scan() {
-			replyChan <- ParseDirection(scanner.Text())
+		if a.scanner.Scan() {
+			dir := ParseDirection(a.scanner.Text())
+			replyChan <- dir
 		}
 	}()
 

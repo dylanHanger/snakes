@@ -15,7 +15,7 @@ func (p *GridPoint) Move(d Direction) GridPoint {
 }
 
 func (p *GridPoint) Reflect(w, h int) GridPoint {
-	return GridPoint{w - p.X, h - p.Y}
+	return GridPoint{w - p.X - 1, h - p.Y - 1}
 }
 
 // Towards returns the direction that moves towards another point
@@ -96,5 +96,5 @@ func (p *GridPoint) L2DistanceTo(other GridPoint) float64 {
 	dx := p.X - other.X
 	dy := p.Y - other.Y
 
-	return math.Round(math.Sqrt(float64(dx*dx + dy*dy)))
+	return math.Sqrt(float64(dx*dx + dy*dy))
 }
