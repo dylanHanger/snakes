@@ -7,7 +7,7 @@ import (
 	"math"
 	"time"
 
-	"github.com/dylanHanger/snakes/pkg"
+	"github.com/dylanHanger/snakes/pkg/engine"
 	"github.com/jinzhu/copier"
 )
 
@@ -20,14 +20,14 @@ import (
 
 var ErrNoSpace = errors.New("no space on the map")
 
-type player = pkg.Player[State, Direction]
+type player = engine.Player[State, Direction]
 
 type (
 	Game struct {
 		config  *Config
 		players map[int]player
 
-		random      *pkg.SharedRand
+		random      *engine.SharedRand
 		state       state
 		renderState renderState
 	}
@@ -53,45 +53,45 @@ func NewGame(cfg *Config) *Game {
 	return g
 }
 
-func NewPlayer(cfg PlayerConfig, a pkg.Agent[State, Direction]) *Player {
+func NewPlayer(cfg PlayerConfig, a engine.Agent[State, Direction]) *Player {
 	return &Player{
 		PlayerConfig: cfg,
 		agent:        a,
 	}
 }
 
-// Agent implements pkg.Player.
-func (p *Player) Agent() pkg.Agent[State, Direction] { return p.agent }
+// Agent implements engine.Player.
+func (p *Player) Agent() engine.Agent[State, Direction] { return p.agent }
 
-// Color implements pkg.Player.
+// Color implements engine.Player.
 func (p *Player) Color() color.Color { return p.PlayerConfig.Color }
 
-// Name implements pkg.Player.
+// Name implements engine.Player.
 func (p *Player) Name() string { return p.PlayerConfig.Name }
 
-// Silent implements pkg.Player
+// Silent implements engine.Player
 func (p *Player) Silent() bool { return p.PlayerConfig.Silent }
 
-// Timeout implements pkg.Player.
+// Timeout implements engine.Player.
 func (p *Player) Timeout() time.Duration { return p.PlayerConfig.Timeout }
 
-// WaitFor implements pkg.Player.
+// WaitFor implements engine.Player.
 func (p *Player) WaitFor() bool { return p.PlayerConfig.WaitFor }
 
-// Name implements pkg.Game.
+// Name implements engine.Game.
 func (g *Game) Name() string { return "Snakes!" }
 
-// TurnsPerSecond implements pkg.Game.
+// TurnsPerSecond implements engine.Game.
 func (g *Game) TurnsPerSecond() float64 { return g.config.TurnsPerSecond }
 
-// Players implements pkg.Game.
-func (g *Game) Players() map[int]pkg.Player[State, Direction] {
+// Players implements engine.Game.
+func (g *Game) Players() map[int]engine.Player[State, Direction] {
 	return g.players
 }
 
-// Reset implements pkg.Game.
+// Reset implements engine.Game.
 func (g *Game) Reset() error {
-	g.random = pkg.GetRandomFromSeed(g.config.Seed)
+	g.random = engine.GetRandomFromSeed(g.config.Seed)
 	g.state.startTime = time.Now()
 	g.state.currentTurn = 0
 	g.state.snakes = make([]*Snake, len(g.players))
@@ -101,8 +101,8 @@ func (g *Game) Reset() error {
 		snake := new(Snake)
 		snake.player = player
 		g.state.snakes[id] = snake
-		if setter, ok := player.Agent().(interface{ SetRandom(*pkg.SharedRand) }); ok {
-			setter.SetRandom(pkg.GetRandomFromSeed(fmt.Sprintf("%s:%d", g.config.Seed, id)))
+		if setter, ok := player.Agent().(interface{ SetRandom(*engine.SharedRand) }); ok {
+			setter.SetRandom(engine.GetRandomFromSeed(fmt.Sprintf("%s:%d", g.config.Seed, id)))
 		}
 	}
 
@@ -120,7 +120,7 @@ func (g *Game) ShouldSendState(id int) bool {
 	return snake != nil && !snake.IsDead()
 }
 
-// State implements pkg.Game.
+// State implements engine.Game.
 func (g *Game) State(id int) (State, error) {
 	food := make(map[GridPoint]int)
 	copier.Copy(&food, g.state.food)
@@ -139,7 +139,7 @@ func (g *Game) State(id int) (State, error) {
 	return State{}, fmt.Errorf("player should not receive state this turn")
 }
 
-// ProcessTurn implements pkg.Game.
+// ProcessTurn implements engine.Game.
 func (g *Game) ProcessTurn(actions map[int]Direction) error {
 	g.state.currentTurn++
 	for id, move := range actions {
@@ -293,7 +293,7 @@ func (g *Game) processCollisions() {
 	}
 }
 
-// IsGameOver implements pkg.Game.
+// IsGameOver implements engine.Game.
 func (g *Game) IsGameOver() bool {
 	return g.state.currentTurn >= g.config.MaxTurns
 }

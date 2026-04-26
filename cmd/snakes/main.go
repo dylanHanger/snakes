@@ -8,7 +8,7 @@ import (
 
 	_ "embed"
 
-	"github.com/dylanHanger/snakes/pkg"
+	"github.com/dylanHanger/snakes/pkg/engine"
 	"github.com/dylanHanger/snakes/pkg/snakes"
 	"github.com/hajimehoshi/ebiten/v2"
 )
@@ -30,7 +30,7 @@ func main() {
 		cfg = snakes.DefaultConfig()
 	}
 	g := snakes.NewGame(cfg)
-	e := pkg.NewEbitenEngine(g)
+	e := engine.NewEbitenEngine(g)
 	img, _, _ := image.Decode(bytes.NewReader(Icon))
 	ebiten.SetWindowIcon([]image.Image{img})
 	e.Run()

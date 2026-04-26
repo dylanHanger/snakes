@@ -4,13 +4,13 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/dylanHanger/snakes/pkg"
+	"github.com/dylanHanger/snakes/pkg/engine"
 )
 
 type baseAgent struct {
 	ctx    context.Context
 	talk   chan string
-	random *pkg.SharedRand
+	random *engine.SharedRand
 }
 
 func (a *baseAgent) Start(ctx context.Context) error {
@@ -38,10 +38,10 @@ func (a *baseAgent) Talk(ctx context.Context) <-chan string {
 	return a.talk
 }
 
-func (a *baseAgent) SetRandom(r *pkg.SharedRand) {
+func (a *baseAgent) SetRandom(r *engine.SharedRand) {
 	a.random = r
 }
 
-func (a *baseAgent) Random() *pkg.SharedRand {
+func (a *baseAgent) Random() *engine.SharedRand {
 	return a.random
 }

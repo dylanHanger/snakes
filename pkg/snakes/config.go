@@ -7,7 +7,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/dylanHanger/snakes/pkg"
+	"github.com/dylanHanger/snakes/pkg/engine"
 	"github.com/goccy/go-yaml"
 	"github.com/hajimehoshi/ebiten/v2"
 	"github.com/muesli/gamut"
@@ -26,7 +26,7 @@ type (
 	}
 	Player struct {
 		PlayerConfig
-		agent pkg.Agent[State, Direction]
+		agent engine.Agent[State, Direction]
 	}
 
 	Config struct {
@@ -182,7 +182,7 @@ func LoadConfig(configPath string) (*Config, error) {
 	// Process players
 	for id, playerCount := range raw.Players {
 		for name, rawPlayer := range playerCount {
-			timeout := pkg.CalculateTurnDuration(raw.TurnsPerSecond).Milliseconds()
+			timeout := engine.CalculateTurnDuration(raw.TurnsPerSecond).Milliseconds()
 			if rawPlayer.Timeout > 0 {
 				timeout = rawPlayer.Timeout
 			}
@@ -256,7 +256,7 @@ func generateDefaultColor(id int) color.Color {
 }
 
 // Helper function to create the appropriate agent for each player type
-func createAgent(cfg rawPlayerConfig) (pkg.Agent[State, Direction], error) {
+func createAgent(cfg rawPlayerConfig) (engine.Agent[State, Direction], error) {
 	switch cfg.Type {
 	case "custom":
 		// Create custom executable agent
