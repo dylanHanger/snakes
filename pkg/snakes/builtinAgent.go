@@ -66,8 +66,8 @@ func (s *State) containsPoint(p GridPoint) bool {
 
 func (s *State) obstacles() map[GridPoint]bool {
 	obstacles := make(map[GridPoint]bool)
-	for _, s := range s.Snakes {
-		for _, p := range s.Body() {
+	for _, snake := range s.Snakes {
+		for _, p := range snake.Body() {
 			obstacles[p] = true
 		}
 	}
