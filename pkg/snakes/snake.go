@@ -60,7 +60,7 @@ func (s *Snake) Move(d Direction) {
 		d = current
 	}
 
-	actualLength := min(len(s.body), s.length)
+	actualLength := min(len(s.body), s.length-1)
 	s.body = append([]GridPoint{head.Move(d)}, s.body[:actualLength]...)
 
 	s.CurrentLength = len(s.body)
