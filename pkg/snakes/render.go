@@ -2,18 +2,14 @@ package snakes
 
 import (
 	"bytes"
-	"fmt"
 	"image"
 	"image/color"
 	"math"
-	"slices"
-	"strings"
 
 	_ "image/png"
 
 	images "github.com/dylanHanger/snakes/pkg/snakes/resources"
 	"github.com/hajimehoshi/ebiten/v2"
-	"github.com/hajimehoshi/ebiten/v2/ebitenutil"
 	"github.com/hajimehoshi/ebiten/v2/vector"
 	"github.com/muesli/gamut"
 )
@@ -270,38 +266,6 @@ func (g *Game) Render(screen *ebiten.Image) {
 	for id, s := range g.state.snakes {
 		g.drawSnakeWithSkin(screen, g.getSkin(id), *s)
 	}
-
-	snakes := make([]*Snake, len(g.players))
-	for id := range len(snakes) {
-		snakes[id] = g.state.snakes[id]
-	}
-	// sort.Sort(ByScore(snakes))
-	slices.SortFunc(snakes, func(a, b *Snake) int {
-		// Compare by MaxLength
-		if a.MaxLength != b.MaxLength {
-			return b.MaxLength - a.MaxLength
-		}
-		// Then by CurrentLength
-		if a.CurrentLength != b.CurrentLength {
-			return b.CurrentLength - a.CurrentLength
-		}
-		// Then by Kills
-		if a.Kills != b.Kills {
-			return b.Kills - a.Kills
-		}
-		// Finally by Deaths (fewer is better)
-		if a.Deaths != b.Deaths {
-			return (a.Deaths + a.Suicides) - (b.Deaths + b.Suicides)
-		}
-		// Equal
-		return 0
-	})
-
-	displayStrings := make([]string, len(g.players))
-	for i, s := range snakes {
-		displayStrings[i] = fmt.Sprintf("%d. %s: %d (max: %d) K: %d D: %d", i, s.player.Name(), s.CurrentLength, s.MaxLength, s.Kills, s.Deaths+s.Suicides)
-	}
-	ebitenutil.DebugPrint(screen, strings.Join(displayStrings, "\n"))
 }
 
 type renderState struct {

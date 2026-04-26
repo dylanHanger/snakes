@@ -3,10 +3,12 @@ package engine
 import (
 	"context"
 	"fmt"
+	"strings"
 	"sync"
 	"time"
 
 	"github.com/hajimehoshi/ebiten/v2"
+	"github.com/hajimehoshi/ebiten/v2/ebitenutil"
 	"github.com/hajimehoshi/ebiten/v2/inpututil"
 	"github.com/jwalton/gchalk"
 )
@@ -284,19 +286,38 @@ func (e *ebiEngine[S, A]) Draw(screen *ebiten.Image) {
 	screenWidth, screenHeight := screen.Bounds().Dx(), screen.Bounds().Dy()
 
 	// Calculate arena dimensions (left 80% of screen, full height)
-	arenaWidth := screenWidth //int(float64(screenWidth) * 0.8)
+	arenaWidth := int(float64(screenWidth) * 0.8)
 	arenaHeight := screenHeight
+	scoreWidth := screenWidth - arenaWidth
 
 	// Create arena image with calculated dimensions
 	arenaScreen := ebiten.NewImage(arenaWidth, arenaHeight)
+	scoreScreen := ebiten.NewImage(scoreWidth, arenaHeight)
 
 	e.mu.Lock()
 	e.renderer.Render(arenaScreen)
+	e.drawScoreboard(scoreScreen)
 	e.mu.Unlock()
 
 	// Draw arena to the left side of the screen (starting at x=0)
 	op := &ebiten.DrawImageOptions{}
 	screen.DrawImage(arenaScreen, op)
+
+	op = &ebiten.DrawImageOptions{}
+	op.GeoM.Translate(float64(arenaWidth), 0)
+	screen.DrawImage(scoreScreen, op)
+}
+
+func (e *ebiEngine[S, A]) drawScoreboard(screen *ebiten.Image) {
+	entries := e.game.Scoreboard()
+	if len(entries) == 0 {
+		return
+	}
+	lines := make([]string, len(entries))
+	for i, entry := range entries {
+		lines[i] = fmt.Sprintf("%d. %s: %s", i, entry.Player.Name(), entry.Score)
+	}
+	ebitenutil.DebugPrint(screen, strings.Join(lines, "\n"))
 }
 
 // Layout implements ebiten.Game

@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"image/color"
 	"math"
+	"slices"
 	"time"
 
 	"github.com/dylanHanger/snakes/pkg/engine"
@@ -296,4 +297,36 @@ func (g *Game) processCollisions() {
 // IsGameOver implements engine.Game.
 func (g *Game) IsGameOver() bool {
 	return g.state.currentTurn >= g.config.MaxTurns
+}
+
+// Scoreboard implements engine.Game. Snakes are ordered by max length,
+// current length, kills, and finally deaths (fewer is better).
+func (g *Game) Scoreboard() []engine.ScoreEntry[State, Direction] {
+	ranked := make([]*Snake, len(g.state.snakes))
+	copy(ranked, g.state.snakes)
+
+	slices.SortFunc(ranked, func(a, b *Snake) int {
+		if a.MaxLength != b.MaxLength {
+			return b.MaxLength - a.MaxLength
+		}
+		if a.CurrentLength != b.CurrentLength {
+			return b.CurrentLength - a.CurrentLength
+		}
+		if a.Kills != b.Kills {
+			return b.Kills - a.Kills
+		}
+		if a.Deaths != b.Deaths {
+			return (a.Deaths + a.Suicides) - (b.Deaths + b.Suicides)
+		}
+		return 0
+	})
+
+	entries := make([]engine.ScoreEntry[State, Direction], len(ranked))
+	for i, s := range ranked {
+		entries[i] = engine.ScoreEntry[State, Direction]{
+			Player: s.player,
+			Score:  s.snakeScore,
+		}
+	}
+	return entries
 }

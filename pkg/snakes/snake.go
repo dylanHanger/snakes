@@ -1,5 +1,7 @@
 package snakes
 
+import "fmt"
+
 type Snake struct {
 	body   []GridPoint
 	length int
@@ -23,6 +25,10 @@ type snakeScore struct {
 
 func (s *Snake) Score() snakeScore {
 	return s.snakeScore
+}
+
+func (s snakeScore) String() string {
+	return fmt.Sprintf("%d (max: %d) K: %d D: %d", s.CurrentLength, s.MaxLength, s.Kills, s.Deaths+s.Suicides)
 }
 
 func (s *Snake) Kill(suicide bool) {

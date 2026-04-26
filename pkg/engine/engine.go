@@ -2,6 +2,7 @@ package engine
 
 import (
 	"context"
+	"fmt"
 	"hash/fnv"
 	"image/color"
 	"math/rand/v2"
@@ -13,6 +14,15 @@ import (
 
 type Engine[S, A any] interface {
 	Run() error
+}
+
+type Score interface {
+	fmt.Stringer
+}
+
+type ScoreEntry[S, A any] struct {
+	Player Player[S, A]
+	Score  Score
 }
 
 type Game[S, A any] interface {
@@ -27,6 +37,8 @@ type Game[S, A any] interface {
 	ProcessTurn(actions map[int]A) error
 
 	IsGameOver() bool
+
+	Scoreboard() []ScoreEntry[S, A]
 }
 
 type SharedRand struct {
