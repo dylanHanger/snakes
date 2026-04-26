@@ -16,7 +16,8 @@ type externalAgent struct {
 	stdin  io.WriteCloser
 	stdout io.ReadCloser
 	stderr io.ReadCloser
-	scanner *bufio.Scanner
+
+	moves chan Direction
 
 	executable string
 	args       []string
@@ -49,7 +50,6 @@ func (a *externalAgent) Start(ctx context.Context) error {
 	if err != nil {
 		return fmt.Errorf("failed to create stdout pipe: %w", err)
 	}
-	a.scanner = bufio.NewScanner(a.stdout)
 
 	a.stderr, err = a.cmd.StderrPipe()
 	if err != nil {
@@ -59,6 +59,15 @@ func (a *externalAgent) Start(ctx context.Context) error {
 	if err := a.cmd.Start(); err != nil {
 		return fmt.Errorf("failed to start agent: %w", err)
 	}
+
+	a.moves = make(chan Direction)
+	go func() {
+		scanner := bufio.NewScanner(a.stdout)
+		for scanner.Scan() {
+			d := ParseDirection(scanner.Text())
+			a.moves <- d
+		}
+	}()
 
 	a.exited = make(chan struct{})
 	go func() {
@@ -86,8 +95,6 @@ func (a *externalAgent) Stop(ctx context.Context) error {
 }
 
 func (a *externalAgent) Send(state State, context context.Context) (<-chan Direction, error) {
-	replyChan := make(chan Direction, 1)
-
 	width, height := state.Width, state.Height
 	foodLifetime, foodValue := state.FoodLifetime, state.FoodValue
 	maxTurns := state.MaxTurns
@@ -162,15 +169,23 @@ func (a *externalAgent) Send(state State, context context.Context) (<-chan Direc
 		}
 	}
 
+	reply := make(chan Direction, 1)
+
 	go func() {
-		defer close(replyChan)
-		if a.scanner.Scan() {
-			dir := ParseDirection(a.scanner.Text())
-			replyChan <- dir
+		defer close(reply)
+		select {
+		case r := <- a.moves:
+			reply <- r
+		case <-context.Done():
+			// NOTE: the below is not 100% correct I think.
+			// In the case where the next turn is already waiting for its move after this one times out,
+			// there is no way to guarantee that the move is consumed here before it is consumed by the next turn's goroutine.
+			// But this is already so over-engineered that I would rather it break in the 0.05% of cases where that happens naturally.
+			<-a.moves // wait and immediately consume the next turn's move
 		}
 	}()
 
-	return replyChan, nil
+	return reply, nil
 }
 
 func (a *externalAgent) Talk(ctx context.Context) <-chan string {
