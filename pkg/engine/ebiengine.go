@@ -142,7 +142,13 @@ func (e *ebiEngine[S, A]) Update() error {
 
 	// Should the game end?
 	if e.game.IsGameOver() {
-		// return ebiten.Termination
+		scoreboard := e.game.Scoreboard()
+		for i,s := range scoreboard {
+			r, g, b, _ := s.Player.Color().RGBA()
+			colfn := gchalk.RGB(uint8(r>>8), uint8(g>>8), uint8(b>>8))
+			fmt.Printf("%d. %s: %v\n", i+1, colfn(s.Player.Name()), s.Score)
+		}
+		return ebiten.Termination
 	}
 	return nil
 }
@@ -315,7 +321,7 @@ func (e *ebiEngine[S, A]) drawScoreboard(screen *ebiten.Image) {
 	}
 	lines := make([]string, len(entries))
 	for i, entry := range entries {
-		lines[i] = fmt.Sprintf("%d. %s: %s", i, entry.Player.Name(), entry.Score)
+		lines[i] = fmt.Sprintf("%d. %s: %s", i+1, entry.Player.Name(), entry.Score)
 	}
 	ebitenutil.DebugPrint(screen, strings.Join(lines, "\n"))
 }

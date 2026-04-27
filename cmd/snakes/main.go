@@ -33,10 +33,5 @@ func main() {
 	e := engine.NewEbitenEngine(g)
 	img, _, _ := image.Decode(bytes.NewReader(Icon))
 	ebiten.SetWindowIcon([]image.Image{img})
-	end := e.Run()
-	if end == ebiten.Termination {
-		println("Game over!")
-	} else if end != nil {
-		fmt.Printf("Something went wrong: %v", end)
-	}
+	e.Run()
 }
