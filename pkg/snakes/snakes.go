@@ -132,6 +132,7 @@ func (g *Game) State(id int) (State, error) {
 	if g.ShouldSendState(id) {
 		return State{
 			Id:     id,
+			CurrentTurn: g.state.currentTurn,
 			Config: g.config,
 			Snakes: snakes,
 			Food:   food,

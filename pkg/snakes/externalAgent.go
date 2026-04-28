@@ -9,6 +9,10 @@ import (
 	"os/exec"
 )
 
+type agentReply struct {
+	direction Direction
+	turn int
+}
 type externalAgent struct {
 	baseAgent
 
@@ -17,7 +21,8 @@ type externalAgent struct {
 	stdout io.ReadCloser
 	stderr io.ReadCloser
 
-	moves chan Direction
+	expectedTurn int
+	moves chan agentReply
 
 	executable string
 	args       []string
@@ -60,13 +65,17 @@ func (a *externalAgent) Start(ctx context.Context) error {
 		return fmt.Errorf("failed to start agent: %w", err)
 	}
 
-	a.moves = make(chan Direction)
+	a.expectedTurn = 0
+	a.moves = make(chan agentReply)
 	go func() {
 		scanner := bufio.NewScanner(a.stdout)
+		var t int = 0
 		for scanner.Scan() {
 			d := ParseDirection(scanner.Text())
-			a.moves <- d
+			a.moves <- agentReply { direction: d, turn: t }
+			t += 1
 		}
+		close(a.moves)
 	}()
 
 	a.exited = make(chan struct{})
@@ -170,18 +179,24 @@ func (a *externalAgent) Send(state State, context context.Context) (<-chan Direc
 	}
 
 	reply := make(chan Direction, 1)
-
+	expected := a.expectedTurn
+	a.expectedTurn += 1
 	go func() {
 		defer close(reply)
-		select {
-		case r := <- a.moves:
-			reply <- r
-		case <-context.Done():
-			// NOTE: the below is not 100% correct I think.
-			// In the case where the next turn is already waiting for its move after this one times out,
-			// there is no way to guarantee that the move is consumed here before it is consumed by the next turn's goroutine.
-			// But this is already so over-engineered that I would rather it break in the 0.05% of cases where that happens naturally.
-			<-a.moves // wait and immediately consume the next turn's move
+		for {
+			select {
+			case r, ok := <-a.moves:
+				if (!ok) { return }
+				if r.turn < expected { 
+					a.TrySay("Draining %v (reply #%d)", r.direction, r.turn)
+					continue 
+				}
+				reply <- r.direction
+				return
+			case <-context.Done():
+				a.TrySay("Timed out!")
+				return
+			}
 		}
 	}()
 
