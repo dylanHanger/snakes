@@ -8,7 +8,6 @@ import (
 	"github.com/hajimehoshi/ebiten/v2"
 	"github.com/hajimehoshi/ebiten/v2/ebitenutil"
 	"github.com/hajimehoshi/ebiten/v2/inpututil"
-	"github.com/jwalton/gchalk"
 )
 
 type ebiEngine[S, A any] struct {
@@ -96,12 +95,6 @@ func (e *ebiEngine[S, A]) Update() error {
 
 	// Should the game end?
 	if e.game.IsGameOver() {
-		scoreboard := e.game.Scoreboard()
-		for i,s := range scoreboard {
-			r, g, b, _ := s.Player.Color().RGBA()
-			colfn := gchalk.RGB(uint8(r>>8), uint8(g>>8), uint8(b>>8))
-			fmt.Printf("%d. %s: %v\n", i+1, colfn(s.Player.Name()), s.Score)
-		}
 		return ebiten.Termination
 	}
 	return nil
