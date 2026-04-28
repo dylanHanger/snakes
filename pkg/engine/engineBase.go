@@ -59,9 +59,7 @@ func (r *engineBase[S, A]) StartAgents(ctx context.Context) {
 // messages to stdout colored by player color.
 func (r *engineBase[S, A]) Listen(ctx context.Context) {
 	for _, p := range r.game.Players() {
-		if !p.Silent() {
-			go r.listenTo(p, ctx)
-		}
+		go r.listenTo(p, ctx)
 	}
 }
 
@@ -73,7 +71,9 @@ func (r *engineBase[S, A]) listenTo(p Player[S, A], ctx context.Context) {
 	for msg := range c.Talk(ctx) {
 		red, green, blue, _ := p.Color().RGBA()
 		colfn := gchalk.RGB(uint8(red>>8), uint8(green>>8), uint8(blue>>8))
-		fmt.Printf("[%s]: %s\n", colfn(p.Name()), msg)
+		if (!p.Silent()) {
+			fmt.Printf("[%s]: %s\n", colfn(p.Name()), msg)
+		}
 	}
 }
 
