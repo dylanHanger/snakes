@@ -78,6 +78,3 @@ Set a specific seed when testing, to ensure that you get the same spawn location
 But remember, just because you do well on one seed, doesn't mean you will do well on every seed, and vice versa.
 Make sure you try at least a few different seeds to ensure you aren't getting (un)lucky.
 Keep in mind that the seed does not affect any internal randomness that you have in your own code, so you should seed that too (it probably doesn't matter if you have the same every time)
-
-> [!CAUTION]
-> In the current version (v0.9.1) there are some bugs that affect the determinism of the built in agents, and seeds may not guarantee a perfectly repeatable game.

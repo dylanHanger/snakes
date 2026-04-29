@@ -3,7 +3,29 @@ package snakes
 import (
 	"context"
 	"math"
+	"sort"
+
+	"github.com/dylanHanger/snakes/pkg/pathfinding"
 )
+
+// gridPointLess gives a stable ordering on GridPoint so map-iteration ties
+// resolve the same way every run.
+func gridPointLess(a, b GridPoint) bool {
+	if a.X != b.X {
+		return a.X < b.X
+	}
+	return a.Y < b.Y
+}
+
+// sortedFoodKeys returns food positions in a deterministic order.
+func sortedFoodKeys(food map[GridPoint]int) []GridPoint {
+	keys := make([]GridPoint, 0, len(food))
+	for p := range food {
+		keys = append(keys, p)
+	}
+	sort.Slice(keys, func(i, j int) bool { return gridPointLess(keys[i], keys[j]) })
+	return keys
+}
 
 type BuiltInDifficulty string
 
@@ -40,12 +62,12 @@ func (s *State) findClosestFood(p GridPoint) (GridPoint, int) {
 	var point GridPoint
 	var lifetime int
 	dist := math.MaxInt
-	for f, v := range s.Food {
+	for _, f := range sortedFoodKeys(s.Food) {
 		d := f.L1DistanceTo(p)
 		if d < dist {
 			dist = d
 			point = f
-			lifetime = v
+			lifetime = s.Food[f]
 		}
 	}
 
@@ -82,6 +104,27 @@ func (s *State) obstacles() map[GridPoint]bool {
 	}
 
 	return obstacles
+}
+
+// findPath wraps the generic A* in pkg/pathfinding for the snakes grid.
+func (s *State) findPath(start, goal GridPoint) []GridPoint {
+	obstacles := s.obstacles()
+
+	neighbors := func(p GridPoint) []GridPoint {
+		ns := make([]GridPoint, 0, len(DirCardinals))
+		for _, d := range DirCardinals {
+			n := p.Move(d)
+			if !s.containsPoint(n) || obstacles[n] {
+				continue
+			}
+			ns = append(ns, n)
+		}
+		return ns
+	}
+
+	heuristic := func(p GridPoint) float64 { return p.L2DistanceTo(goal) }
+
+	return pathfinding.Find(start, goal, neighbors, heuristic, gridPointLess)
 }
 
 func (a *builtInAgent) computeMove(state State) Direction {
@@ -180,8 +223,9 @@ func (a *builtInAgent) computeMoveHard(state State) Direction {
 
 	var bestPath []GridPoint
 	bestLifetime := math.MinInt
-	for p, l := range state.Food {
-		path := findPath(head, p, state)
+	for _, p := range sortedFoodKeys(state.Food) {
+		l := state.Food[p]
+		path := state.findPath(head, p)
 
 		if path == nil {
 			continue
@@ -194,8 +238,8 @@ func (a *builtInAgent) computeMoveHard(state State) Direction {
 		}
 	}
 
-	if state.getFoodValue(bestLifetime) < 1 {
-		bestPath = findPath(head, head.Reflect(state.Width, state.Height), state)
+	if bestPath == nil || state.getFoodValue(bestLifetime) < 1 {
+		bestPath = state.findPath(head, head.Reflect(state.Width, state.Height))
 	}
 
 	if len(bestPath) > 0 {
@@ -203,60 +247,4 @@ func (a *builtInAgent) computeMoveHard(state State) Direction {
 	} else {
 		return a.computeMoveMedium(state)
 	}
-}
-
-// A* pathfinding
-func findPath(start, goal GridPoint, s State) []GridPoint {
-	h := goal.L2DistanceTo
-
-	frontier := make(map[GridPoint]bool)
-	frontier[start] = true
-
-	cameFrom := make(map[GridPoint]GridPoint)
-
-	gScore := make(map[GridPoint]int)
-	gScore[start] = 0
-
-	fScore := make(map[GridPoint]float64)
-	fScore[start] = h(start)
-
-	obstacles := s.obstacles()
-
-	for len(frontier) > 0 {
-		var current GridPoint
-		lowest := math.MaxFloat64
-		for p := range frontier {
-			if score, exists := fScore[p]; exists && score < lowest {
-				current = p
-				lowest = score
-			}
-		}
-
-		if current == goal {
-			path := make([]GridPoint, 0)
-			for current != start {
-				path = append(path, current)
-				current = cameFrom[current]
-			}
-			return path
-		}
-		delete(frontier, current)
-
-		for _, d := range DirCardinals {
-			n := current.Move(d)
-
-			if !s.containsPoint(n) || obstacles[n] {
-				continue
-			}
-
-			g := gScore[current] + 1
-			if oldG, exists := gScore[n]; !exists || g < oldG {
-				cameFrom[n] = current
-				gScore[n] = g
-				fScore[n] = float64(g) + h(n)
-				frontier[n] = true
-			}
-		}
-	}
-	return nil
 }
