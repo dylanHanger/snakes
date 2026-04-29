@@ -1,9 +1,12 @@
 package snakes
 
 import (
+	"encoding/base64"
 	"fmt"
 	"image/color"
+	"math/rand"
 	"os"
+	"strconv"
 	"strings"
 	"time"
 
@@ -138,6 +141,16 @@ func DefaultConfig() *Config {
 	}
 }
 
+func getSeed(seed string) string {
+	if len(seed) == 0 {
+		n := rand.Uint64()
+		s := strconv.FormatUint(n, 10)
+		seed = base64.RawStdEncoding.EncodeToString([]byte(s))
+	}
+
+	return seed
+}
+
 // LoadConfig loads the config from the specified YAML file
 func LoadConfig(configPath string) (*Config, error) {
 	defaultConfig := DefaultConfig()
@@ -154,11 +167,13 @@ func LoadConfig(configPath string) (*Config, error) {
 		return nil, fmt.Errorf("failed to parse config file: %w", err)
 	}
 
+	seed := getSeed(raw.Seed);
+
 	// Convert the raw config to our actual Config structure
 	config := &Config{
 		Width:        raw.Width,
 		Height:       raw.Height,
-		Seed:         raw.Seed,
+		Seed:         seed,
 		MaxTurns:     raw.Turns,
 		RespawnTime:  raw.Respawn,
 		FoodLifetime: raw.Food.Lifetime,
