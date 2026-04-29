@@ -108,4 +108,4 @@ It's about the journey, not the destination.
 
 ## License
 
-[MIT License](LICENSE)
+[Apache License](LICENSE)
