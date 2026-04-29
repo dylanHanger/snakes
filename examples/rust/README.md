@@ -17,7 +17,7 @@ let (game_width, game_height) = read!(usize, usize);
 For development, the example includes some basic self-debugging support.
 
 - If you run your snake with `--attach-debugger`, it will attempt to launch VS Code and attach the [CodeLLDB](https://marketplace.visualstudio.com/items?itemName=vadimcn.vscode-lldb) extension automatically, then pause for a few seconds.
-- If the auto-attach doesn’t work, you can always attach manually to the process ID it prints.
+- If the auto-attach doesn't work, you can always attach manually to the process ID it prints.
 
 ### VS Code
 
