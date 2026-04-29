@@ -10,8 +10,9 @@ class Program
             Console.Error.WriteLine($"Waiting for debugger to attach to PID {Environment.ProcessId}");
             while (!Debugger.IsAttached)
             {
-                Thread.Sleep(100);
+                Thread.Sleep(500);
             }
+            Debugger.Break();
         }
 #endif
 

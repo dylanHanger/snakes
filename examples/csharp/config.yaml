@@ -19,7 +19,7 @@ food:
 
 # Player configurations
 players:
-  - My Rust Snake:
+  - My C# Snake:
       type: custom
       wait: true
       cmd: bin/Debug/net9.0/MyCSharpSnake.exe

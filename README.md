@@ -29,7 +29,7 @@ go run ./cmd/snakes --config config/config.yaml
 The goal of the game is to grow longer than any other snake.
 You do so by eating food which spawns randomly on the board.
 The fresher the food, the more you will grow.
-Old food becomes rotten and will shrink you instead
+Old food becomes rotten and will shrink you instead.
 If you crash into anything, or if you shrink too much, you die, and will respawn a few turns later and have to start growing again.
 
 ## Your first snake
