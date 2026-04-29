@@ -4,25 +4,25 @@ This is a very basic example C agent. The code is deliberately minimal; its purp
 
 ## Communication
 
-Read from `stdin` with `scanf`, and write logs with `fprintf(stder, ...)`.
+Read from `stdin` with `scanf`, and write logs with `fprintf(stderr, ...)`.
 
 ## Building
 
-This example uses `xmake` for cross-platform building.
+This example uses [xmake](https://github.com/xmake-io/xmake), you will need to install it or switch to a different build system (like `make` or `cmake`).
 You can build your snake with `xmake build`, which will put the executable in `build/{OS}/{ARCH}/{MODE}`, where `{MODE}` is either `build` or `release`.
 
 ## Debugging
 
-For development, the example includes some basic self-debugging support.
+For development, the example includes logic to attach a debugger to itself.
 
 - If you run your snake with `--attach-debugger`, it will attempt to launch VS Code and attach the [CodeLLDB](https://marketplace.visualstudio.com/items?itemName=vadimcn.vscode-lldb) extension automatically, then pause for a few seconds.
-- If the auto-attach doesn’t work, you can always attach manually to the process ID it prints.
+- If the auto-attach doesn't work, you can always attach manually to the process ID it prints.
 
 **Note:** LLDB might not work correctly when using `gcc` instead of `clang`.
 
 ### VS Code
 
-The included `.vscode/launch.json` shows how to configure your IDE to run the _game host_ (`snakes`) instead of your snake directly. Remember: you don’t launch your agent, you launch _Snakes!_ and it will handle running the agent.
+The included `.vscode/launch.json` shows how to configure your IDE to build your snake and then run the _game host_ (`snakes`) instead of your snake directly. Remember: you don't launch your agent, you launch _Snakes!_ and it will handle running the agent.
 
 ## Strategy
 
