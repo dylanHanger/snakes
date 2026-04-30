@@ -45,7 +45,7 @@ import random
 game_width, game_height = [int(x) for x in input().split()]
 food_lifetime, food_value = [int(x) for x in input().split()]
 num_snakes, my_id = [int(x) for x in input().split()]
-max_turns, timeout = [int(x) for x in input().split()]
+max_turns, respawn, timeout = [int(x) for x in input().split()]
 
 # Update loop, this runs every turn
 while True:

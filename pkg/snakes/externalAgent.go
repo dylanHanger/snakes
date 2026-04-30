@@ -11,7 +11,7 @@ import (
 
 type agentReply struct {
 	direction Direction
-	turn int
+	turn      int
 }
 type externalAgent struct {
 	baseAgent
@@ -22,7 +22,7 @@ type externalAgent struct {
 	stderr io.ReadCloser
 
 	expectedTurn int
-	moves chan agentReply
+	moves        chan agentReply
 
 	executable string
 	args       []string
@@ -72,7 +72,7 @@ func (a *externalAgent) Start(ctx context.Context) error {
 		var t int = 0
 		for scanner.Scan() {
 			d := ParseDirection(scanner.Text())
-			a.moves <- agentReply { direction: d, turn: t }
+			a.moves <- agentReply{direction: d, turn: t}
 			t += 1
 		}
 		close(a.moves)
@@ -107,7 +107,7 @@ func (a *externalAgent) Send(state State, context context.Context) (<-chan Direc
 	width, height := state.Width, state.Height
 	foodLifetime, foodValue := state.FoodLifetime, state.FoodValue
 	maxTurns := state.MaxTurns
-	// respawn := state.RespawnTime // TODO: include respawn time in the config?
+	respawn := state.RespawnTime // TODO: include respawn time in the config?
 
 	timeout := state.Players[state.Id].Timeout().Milliseconds()
 	wait := state.Players[state.Id].WaitFor()
@@ -123,11 +123,11 @@ func (a *externalAgent) Send(state State, context context.Context) (<-chan Direc
 		// <food lifetime> <food value>
 		// <number of players> <your id>
 		// <number of turns> <timeout>
-		_, err := fmt.Fprintf(a.stdin, "%d %d\n%d %d\n%d %d\n%d %d\n",
+		_, err := fmt.Fprintf(a.stdin, "%d %d\n%d %d\n%d %d\n%d %d %d\n",
 			width, height,
 			foodLifetime, foodValue,
 			numPlayers, playerId,
-			maxTurns, timeout)
+			maxTurns, respawn, timeout)
 		if err != nil {
 			return nil, fmt.Errorf("failed to write initialization to agent: %w", err)
 		}
@@ -186,10 +186,11 @@ func (a *externalAgent) Send(state State, context context.Context) (<-chan Direc
 		for {
 			select {
 			case r, ok := <-a.moves:
-				if (!ok) { return }
-				if r.turn < expected { 
-					a.TrySay("Draining %v (reply #%d)", r.direction, r.turn)
-					continue 
+				if !ok {
+					return
+				}
+				if r.turn < expected {
+					continue
 				}
 				reply <- r.direction
 				return

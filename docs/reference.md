@@ -49,7 +49,7 @@ When a custom agent starts, Snakes! writes four initial lines:
 1. `<width> <height>`
 2. `<food_lifetime> <food_value>`
 3. `<player_count> <your_id>`
-4. `<max_turns> <timeout_ms>`
+4. `<max_turns> <respawn_time> <timeout_ms>`
 
 If `wait: true` is set for your agent, then `<timeout_ms>` will be `-1`.
 
@@ -57,7 +57,7 @@ Each turn that your snake is alive, the engine sends:
 
 - A line containing the food count: `<food_count>`
 - One line per food item: `<lifetime_remaining> <x> <y>`
-- One line per snake: `<id> <kills> <deaths> <current_length> <x1> <y1> … <xN> <yN>`
+- One line per snake: `<id> <kills> <deaths> <current_length> <x1> <y1> … <xN> <yN>` (head to tail)
 
 Dead snakes will have a length of 0 (and therefore no coordinates).
 
